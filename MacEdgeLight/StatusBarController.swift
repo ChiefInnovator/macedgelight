@@ -36,6 +36,7 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Toggle All Monitors", action: #selector(allMonitors), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Extend Over Menu Bar", action: #selector(toggleMenuBarOverlay), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Cursor Reveal", action: #selector(toggleCursorReveal), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
 
         let toggleControls = NSMenuItem(title: "Hide Controls", action: #selector(toggleControls), keyEquivalent: "")
@@ -120,6 +121,10 @@ class StatusBarController {
 
     @objc private func toggleCursorReveal() {
         edgeLightManager?.toggleCursorReveal()
+    }
+
+    @objc private func toggleDesktopIcons() {
+        edgeLightManager?.toggleDesktopIcons()
     }
 
     @objc private func toggleControls() {

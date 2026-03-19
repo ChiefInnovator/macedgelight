@@ -4,12 +4,14 @@ class ControlPanelWindow: NSPanel {
     private weak var edgeLightManager: EdgeLightManager?
     private var hideTimer: Timer?
     private let autoHideDelay: TimeInterval = 3.0
+    private let activeColor = NSColor.systemCyan
+    private var toggleButtons: [String: NSButton] = [:]
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
 
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 44),
+            contentRect: NSRect(x: 0, y: 0, width: 460, height: 44),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -52,6 +54,7 @@ class ControlPanelWindow: NSPanel {
             ("display.2", "All monitors", #selector(allMonitors)),
             ("menubar.rectangle", "Toggle light over menu bar", #selector(toggleMenuBarOverlay)),
             ("circle.dashed", "Cursor reveal", #selector(toggleCursorReveal)),
+            ("eye.slash", "Show/hide desktop icons", #selector(toggleDesktopIcons)),
             ("xmark.circle", "Exit", #selector(exitApp)),
         ]
 
@@ -70,6 +73,10 @@ class ControlPanelWindow: NSPanel {
 
             allConstraints.append(button.widthAnchor.constraint(equalToConstant: 36))
             allConstraints.append(button.heightAnchor.constraint(equalToConstant: 36))
+
+            if ["lightbulb", "display.2", "menubar.rectangle", "circle.dashed", "eye.slash"].contains(imageName) {
+                toggleButtons[imageName] = button
+            }
 
             stackView.addArrangedSubview(button)
         }
@@ -133,6 +140,15 @@ class ControlPanelWindow: NSPanel {
         startHideTimer()
     }
 
+    func updateToggleStates() {
+        let settings = AppSettings.shared
+        toggleButtons["lightbulb"]?.contentTintColor = settings.isLightOn ? activeColor : .white
+        toggleButtons["display.2"]?.contentTintColor = settings.showOnAllMonitors ? activeColor : .white
+        toggleButtons["menubar.rectangle"]?.contentTintColor = settings.extendOverMenuBar ? activeColor : .white
+        toggleButtons["circle.dashed"]?.contentTintColor = settings.cursorRevealEnabled ? activeColor : .white
+        toggleButtons["eye.slash"]?.contentTintColor = settings.desktopIconsHidden ? activeColor : .white
+    }
+
     func positionOnScreen(_ screen: NSScreen) {
         let screenFrame = screen.visibleFrame
         let x = screenFrame.midX - frame.width / 2
@@ -174,6 +190,10 @@ class ControlPanelWindow: NSPanel {
 
     @objc private func toggleCursorReveal() {
         edgeLightManager?.toggleCursorReveal()
+    }
+
+    @objc private func toggleDesktopIcons() {
+        edgeLightManager?.toggleDesktopIcons()
     }
 
     @objc private func exitApp() {

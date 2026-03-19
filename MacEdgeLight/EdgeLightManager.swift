@@ -27,6 +27,7 @@ class EdgeLightManager {
             controlPanel?.orderFrontRegardless()
         }
         positionControlPanel()
+        controlPanel?.updateToggleStates()
 
         // Set up menu bar
         statusBar = StatusBarController(manager: self)
@@ -67,6 +68,7 @@ class EdgeLightManager {
     func toggleLight() {
         settings.isLightOn.toggle()
         monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
     }
 
     func increaseBrightness() {
@@ -92,11 +94,29 @@ class EdgeLightManager {
     func toggleExtendOverMenuBar() {
         settings.extendOverMenuBar.toggle()
         monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
     }
 
     func toggleCursorReveal() {
         settings.cursorRevealEnabled.toggle()
         monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
+    }
+
+    func toggleDesktopIcons() {
+        settings.desktopIconsHidden.toggle()
+        let hidden = settings.desktopIconsHidden
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+        task.arguments = ["write", "com.apple.finder", "CreateDesktop", "-bool", hidden ? "false" : "true"]
+        try? task.run()
+        task.waitUntilExit()
+        // Restart Finder to apply the change
+        let killall = Process()
+        killall.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        killall.arguments = ["Finder"]
+        try? killall.run()
+        controlPanel?.updateToggleStates()
     }
 
     // MARK: - Monitor Controls
@@ -109,6 +129,7 @@ class EdgeLightManager {
     func toggleAllMonitors() {
         monitorManager.toggleAllMonitors()
         positionControlPanel()
+        controlPanel?.updateToggleStates()
     }
 
     // MARK: - Control Panel
