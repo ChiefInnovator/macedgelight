@@ -155,16 +155,37 @@ func generateIcon(size: Int) -> NSImage {
     return image
 }
 
-func savePNG(_ image: NSImage, to path: String) {
-    guard let tiffData = image.tiffRepresentation,
-          let bitmap = NSBitmapImageRep(data: tiffData),
-          let pngData = bitmap.representation(using: .png, properties: [:]) else {
+func savePNG(_ image: NSImage, pixelSize: Int, to path: String) {
+    // Create a bitmap at exact pixel dimensions (no Retina scaling)
+    guard let bitmap = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: pixelSize,
+        pixelsHigh: pixelSize,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ) else {
+        print("Failed to create bitmap for \(path)")
+        return
+    }
+    bitmap.size = NSSize(width: pixelSize, height: pixelSize)
+
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+    image.draw(in: NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize))
+    NSGraphicsContext.restoreGraphicsState()
+
+    guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
         print("Failed to create PNG for \(path)")
         return
     }
     do {
         try pngData.write(to: URL(fileURLWithPath: path))
-        print("Created \(path)")
+        print("Created \(path) (\(pixelSize)x\(pixelSize)px)")
     } catch {
         print("Error writing \(path): \(error)")
     }
@@ -188,7 +209,7 @@ let sizes: [(Int, String)] = [
 
 for (size, filename) in sizes {
     let icon = generateIcon(size: size)
-    savePNG(icon, to: "\(outputDir)/\(filename)")
+    savePNG(icon, pixelSize: size, to: "\(outputDir)/\(filename)")
 }
 
 print("Done! Icon files generated.")
