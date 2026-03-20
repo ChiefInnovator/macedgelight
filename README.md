@@ -13,6 +13,20 @@ Inspired by [Windows Edge Light](https://github.com/shanselman/EdgeLight) by Sco
 | **Late Night Coding** | Warm amber glow reduces eye strain. Adjustable brightness from whisper-quiet to blazing bloom. |
 | **Focus & Productivity** | The glow creates a visual boundary that keeps your eyes on screen. Auto-hiding controls stay out of your way. |
 | **Multi-Monitor Setups** | Light up one monitor or all of them. Cycle between displays instantly. |
+| **Replace Your Ring Light** | A software ring light that lives on your screen — no desk clutter, no power cables, no USB hubs. Travels with your laptop. |
+
+### MacEdgeLight vs. Physical Ring Lights
+
+| | MacEdgeLight | Physical Ring Light |
+|---|---|---|
+| **Cost** | Free | $30–$100+ |
+| **Setup** | Download and run | Mount, cable, power supply |
+| **Portability** | Built into your Mac — goes everywhere | Extra gear to pack and carry |
+| **Adjustability** | Brightness, color temp, border width, bloom — all instant | Limited dials, fixed position |
+| **Desk Space** | Zero | Needs a stand or clip |
+| **Multi-Monitor** | One click to light all screens | Buy one per monitor |
+| **Screen Capture** | Toggle on/off per recording | Always physically visible |
+| **Eye Strain** | Glow wraps the screen edge — light comes from where you're looking | Light source pointed at your face |
 
 ## Features
 

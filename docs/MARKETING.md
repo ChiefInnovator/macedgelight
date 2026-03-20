@@ -143,10 +143,11 @@
 |---|---|---|
 | Windows Edge Light (Hanselman) | Windows | Original inspiration. Windows only. |
 | MacOSEdgeLight (chrisdoc) | macOS (Rust) | No bloom, no cursor reveal, no persistence, no animations, no screen capture toggle. |
+| Physical ring lights | Hardware ($30-100+) | Desk clutter, power cables, fixed position, doesn't travel with laptop. |
 | Hue Sync / LIFX | Hardware | Requires physical LED strips. MacEdgeLight is software-only. |
 | f.lux | macOS | Color temperature only, no border glow effect. |
 
-**MacEdgeLight's edge:** The only macOS ambient screen light with bloom mode, cursor reveal, auto menu bar, screen capture toggle, and smooth animations. Free. Native. Lightweight.
+**MacEdgeLight's edge:** The only macOS ambient screen light with bloom mode, cursor reveal, auto menu bar, screen capture toggle, and smooth animations. Free. Native. Lightweight. Replaces physical ring lights for screen-focused use cases — no hardware, no cables, travels with your laptop.
 
 ## Assets Needed
 
