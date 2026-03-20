@@ -2,7 +2,7 @@
 
 <table><tr>
 <td valign="top"><b>Make your Mac glow.</b> A stunning ambient edge light that wraps your entire screen in a smooth, customizable glow — perfect for streaming, presentations, focus sessions, or just making your desktop look incredible.<br><br>Inspired by <a href="https://github.com/shanselman/EdgeLight">Windows Edge Light</a> by Scott Hanselman. Built natively for macOS.</td>
-<td><img src="docs/images/macedgelight-multi-monitor.webp" alt="MacEdgeLight running on MacBook Pro and external TV" width="450"></td>
+<td><img src="docs/images/macedgelight-multi-monitor.webp" alt="MacEdgeLight running on MacBook Pro and external TV" width="300"></td>
 </tr></table>
 
 ## Why MacEdgeLight?
