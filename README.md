@@ -123,13 +123,7 @@ The floating toolbar provides quick access to all features:
 
 Download the latest `.dmg` or `.zip` from [Releases](https://github.com/ChiefInnovator/macedgelight/releases).
 
-Since the app is not signed with an Apple Developer ID, macOS Gatekeeper will block it on first launch. To fix this, open Terminal and run:
-
-```bash
-xattr -cr /Applications/MacEdgeLight.app
-```
-
-Or: right-click the app, choose **Open**, then click **Open** in the dialog.
+The app is signed and notarized by Apple — just open the DMG, drag to Applications, and launch. No Gatekeeper warnings.
 
 ### Building from Source
 
