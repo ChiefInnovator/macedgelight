@@ -89,6 +89,8 @@ The floating toolbar provides quick access to all features:
 ## Requirements
 
 - macOS 13 Ventura or later
+- Retina and non-Retina displays supported
+- Wide-gamut (P3) color displays supported
 
 ## Installation
 
@@ -144,6 +146,10 @@ All visual properties (brightness, color temperature, border width, top inset) u
 ### Window Architecture
 
 The overlay window sits at a custom window level (just below or above the menu bar depending on mode), ignores all mouse events (`ignoresMouseEvents = true`), and is excluded from screen capture by default via `sharingType = .none` (togglable to `.readOnly` to make it visible in recordings). One overlay window is created per active monitor.
+
+## License
+
+[PolyForm Strict License 1.0.0](LICENSE) — Free for noncommercial, personal, educational, and nonprofit use. No redistribution or modification permitted.
 
 ## Credits
 

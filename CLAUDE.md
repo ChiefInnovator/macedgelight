@@ -30,3 +30,6 @@ Or open `MacEdgeLight.xcodeproj` in Xcode. No sandbox entitlements (needed for o
 - Control panel window level is `mainMenu + 2` to stay above the overlay
 - Settings changes flow: AppSettings -> EdgeLightManager -> MonitorManager -> applySettingsToAll() -> EdgeLightOverlayWindow.applySettings()
 - Visual transitions are animated via per-frame lerp in EdgeLightView.animationTick()
+- Menu bar mode is tri-state (0=below, 1=extend, 2=auto). Auto mode tracks cursor at 30fps and animates topInset.
+- License: PolyForm Strict 1.0.0 (noncommercial use, no redistribution or modification)
+- Full technical spec in docs/SPEC.md
