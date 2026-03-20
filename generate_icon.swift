@@ -25,9 +25,9 @@ func generateIcon(size: Int) -> NSImage {
 
     // Deep blue-purple desktop gradient
     let bgColors = [
-        NSColor(red: 0.18, green: 0.15, blue: 0.32, alpha: 1.0).cgColor,
-        NSColor(red: 0.10, green: 0.12, blue: 0.28, alpha: 1.0).cgColor,
-        NSColor(red: 0.08, green: 0.08, blue: 0.20, alpha: 1.0).cgColor,
+        NSColor(red: 0.28, green: 0.25, blue: 0.45, alpha: 1.0).cgColor,
+        NSColor(red: 0.20, green: 0.20, blue: 0.40, alpha: 1.0).cgColor,
+        NSColor(red: 0.15, green: 0.15, blue: 0.32, alpha: 1.0).cgColor,
     ] as CFArray
     if let bgGrad = CGGradient(colorsSpace: colorSpace, colors: bgColors, locations: [0.0, 0.5, 1.0]) {
         context.drawLinearGradient(bgGrad,
