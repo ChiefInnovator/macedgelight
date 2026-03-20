@@ -31,17 +31,26 @@ export: archive
 	cp -R $(ARCHIVE_PATH)/Products/Applications/$(APP_NAME).app $(EXPORT_PATH)/
 	@echo "Exported to $(APP_PATH)"
 
-# Create a DMG with drag-to-Applications layout
-dmg: export
+# Generate DMG background image
+dmg-bg:
+	@mkdir -p $(BUILD_DIR)
+	swift generate_dmg_bg.swift
+
+# Create a styled DMG with drag-to-Applications layout
+dmg: export dmg-bg
 	@rm -f $(DMG_PATH)
-	@mkdir -p $(BUILD_DIR)/dmg-staging
-	cp -R $(APP_PATH) $(BUILD_DIR)/dmg-staging/
-	ln -sf /Applications $(BUILD_DIR)/dmg-staging/Applications
-	hdiutil create -volname "$(APP_NAME)" \
-		-srcfolder $(BUILD_DIR)/dmg-staging \
-		-ov -format UDZO \
-		$(DMG_PATH)
-	@rm -rf $(BUILD_DIR)/dmg-staging
+	create-dmg \
+		--volname "$(APP_NAME)" \
+		--background $(BUILD_DIR)/dmg-background.png \
+		--window-pos 200 120 \
+		--window-size 660 400 \
+		--icon-size 100 \
+		--icon "$(APP_NAME).app" 175 190 \
+		--app-drop-link 485 190 \
+		--text-size 14 \
+		--no-internet-enable \
+		$(DMG_PATH) \
+		$(APP_PATH)
 	@echo "Created $(DMG_PATH)"
 
 # Create a zip of the .app
