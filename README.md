@@ -155,3 +155,14 @@ The overlay window sits at a custom window level (just below or above the menu b
 
 - Original concept: [Scott Hanselman's EdgeLight](https://github.com/shanselman/EdgeLight)
 - macOS implementation by [Richard Crane](https://inventingfirewith.ai)
+
+---
+
+Transform your screen into an ambient light show with MacEdgeLight!
+
+---
+
+Powered by [MILL5](https://www.mill5.com)
+Explore [Richard Crane on Microsoft MVP](https://mvp.microsoft.com/en-US/MVP/profile/10ce0bc0-7536-43f6-b28c-e9601a4a0d0d)
+Listen to the [Inventing Fire with AI](https://inventingfirewith.ai) podcast for insights on technology and innovation.
+For support, contact: [rich@mill5.com](mailto:rich@mill5.com)
