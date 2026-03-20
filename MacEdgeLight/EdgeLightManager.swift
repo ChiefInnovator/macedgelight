@@ -9,9 +9,11 @@ class EdgeLightManager {
     private var screenChangeObserver: Any?
 
     private let brightnessStep = 0.15
+    private let brightnessStepFine = 0.025
     private let minBrightness = 0.2
     private let maxBrightness = 2.0
     private let colorTempStep = 0.1
+    private let colorTempStepFine = 0.015
 
     init() {
         monitorManager = MonitorManager(settings: settings)
@@ -81,6 +83,16 @@ class EdgeLightManager {
         monitorManager.applySettingsToAll()
     }
 
+    func increaseBrightnessFine() {
+        settings.brightness = min(maxBrightness, settings.brightness + brightnessStepFine)
+        monitorManager.applySettingsToAll()
+    }
+
+    func decreaseBrightnessFine() {
+        settings.brightness = max(minBrightness, settings.brightness - brightnessStepFine)
+        monitorManager.applySettingsToAll()
+    }
+
     func increaseColorTemperature() {
         settings.colorTemperature = min(1.0, settings.colorTemperature + colorTempStep)
         monitorManager.applySettingsToAll()
@@ -88,6 +100,16 @@ class EdgeLightManager {
 
     func decreaseColorTemperature() {
         settings.colorTemperature = max(0.0, settings.colorTemperature - colorTempStep)
+        monitorManager.applySettingsToAll()
+    }
+
+    func increaseColorTemperatureFine() {
+        settings.colorTemperature = min(1.0, settings.colorTemperature + colorTempStepFine)
+        monitorManager.applySettingsToAll()
+    }
+
+    func decreaseColorTemperatureFine() {
+        settings.colorTemperature = max(0.0, settings.colorTemperature - colorTempStepFine)
         monitorManager.applySettingsToAll()
     }
 
@@ -99,6 +121,12 @@ class EdgeLightManager {
 
     func toggleCursorReveal() {
         settings.cursorRevealEnabled.toggle()
+        monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
+    }
+
+    func toggleScreenCapture() {
+        settings.visibleInCapture.toggle()
         monitorManager.applySettingsToAll()
         controlPanel?.updateToggleStates()
     }

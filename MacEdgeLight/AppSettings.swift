@@ -16,6 +16,7 @@ class AppSettings: ObservableObject {
         static let extendOverMenuBar = "extendOverMenuBar"
         static let cursorRevealEnabled = "cursorRevealEnabled"
         static let desktopIconsHidden = "desktopIconsHidden"
+        static let visibleInCapture = "visibleInCapture"
     }
 
     @Published var brightness: Double {
@@ -58,6 +59,10 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(desktopIconsHidden, forKey: Keys.desktopIconsHidden) }
     }
 
+    @Published var visibleInCapture: Bool {
+        didSet { defaults.set(visibleInCapture, forKey: Keys.visibleInCapture) }
+    }
+
     private init() {
         // Register defaults
         defaults.register(defaults: [
@@ -71,6 +76,7 @@ class AppSettings: ObservableObject {
             Keys.extendOverMenuBar: false,
             Keys.cursorRevealEnabled: false,
             Keys.desktopIconsHidden: false,
+            Keys.visibleInCapture: false,
         ])
 
         self.brightness = defaults.double(forKey: Keys.brightness)
@@ -83,5 +89,6 @@ class AppSettings: ObservableObject {
         self.extendOverMenuBar = defaults.bool(forKey: Keys.extendOverMenuBar)
         self.cursorRevealEnabled = defaults.bool(forKey: Keys.cursorRevealEnabled)
         self.desktopIconsHidden = defaults.bool(forKey: Keys.desktopIconsHidden)
+        self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)
     }
 }

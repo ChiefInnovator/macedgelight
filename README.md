@@ -9,12 +9,14 @@ A macOS ambient edge light that wraps your screen in a glowing frame. Inspired b
 - Adjustable brightness from subtle (20%) to blazing bloom (200%)
 - Color temperature control from cool blue-white to warm amber
 - Click-through — never interferes with your work
-- Invisible to screen capture (won't appear in Zoom, Teams, or recordings)
+- Hidden from screen capture by default (invisible in Zoom, Teams, or recordings)
+- Toggle screen capture visibility to show the glow in recordings and streams
 
 **Bloom Mode**
 - Push brightness past 100% for an additive white-hot bloom effect
 - Glow radius expands and intensifies at higher brightness levels
 - Smooth animated transitions between all brightness and color levels
+- Hold brightness or color buttons for continuous fine-grained adjustment
 
 **Cursor Reveal**
 - Toggle a feathered circular cutout that follows your cursor
@@ -38,7 +40,7 @@ A macOS ambient edge light that wraps your screen in a glowing frame. Inspired b
 - Floating HUD toolbar with quick access to everything
 - Fades away after 3 seconds of inactivity
 - Reappears instantly on hover
-- Toggle buttons glow cyan when active
+- Toggle buttons swap to filled icons when active
 
 **Menu Bar App**
 - Runs as a lightweight menu bar utility (no Dock icon)
@@ -59,16 +61,17 @@ The floating toolbar provides quick access to all features:
 
 | Icon | Function | Toggle |
 |---|---|---|
-| Sun (dim) | Decrease brightness | |
-| Sun (bright) | Increase brightness | |
-| Flame | Warmer color temperature | |
-| Snowflake | Cooler color temperature | |
-| Lightbulb | Toggle light on/off | Cyan when on |
+| Sun (dim) | Decrease brightness (hold to fine-adjust) | |
+| Sun (bright) | Increase brightness (hold to fine-adjust) | |
+| Flame | Warmer color temperature (hold to fine-adjust) | |
+| Snowflake | Cooler color temperature (hold to fine-adjust) | |
+| Lightbulb | Toggle light on/off | Filled when on |
 | Monitor | Switch to next monitor | |
-| Monitors | All monitors mode | Cyan when on |
-| Menu bar | Extend over menu bar | Cyan when on |
-| Circle | Cursor reveal mode | Cyan when on |
-| Eye | Hide desktop icons | Cyan when on |
+| Monitors | All monitors mode | Filled when on |
+| Menu bar | Extend over menu bar | |
+| Circle | Cursor reveal mode | Filled when on |
+| Video | Show in screen capture | Filled when on |
+| Eye | Hide desktop icons | Swaps to eye.slash |
 | X | Quit | |
 
 ## Requirements
@@ -89,7 +92,7 @@ The edge light is drawn using Core Graphics with multiple layered glow passes:
 4. **Bloom** — additive `.plusLighter` compositing for brightness above 100%
 5. **Cursor cutout** — `.destinationOut` radial gradient to punch through the glow
 
-The overlay window sits at a custom window level (just below or above the menu bar), ignores all mouse events, and is excluded from screen capture via `sharingType = .none`.
+The overlay window sits at a custom window level (just below or above the menu bar), ignores all mouse events, and is excluded from screen capture by default via `sharingType = .none` (togglable to `.readOnly` to make it visible in recordings).
 
 ## Credits
 

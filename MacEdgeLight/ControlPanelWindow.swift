@@ -1,17 +1,57 @@
 import Cocoa
 
+// Button that fires its action immediately on press, then repeats with fine steps while held
+private class RepeatButton: NSButton {
+    var onHoldTick: (() -> Void)?
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+
+        // Fire immediately on press (normal step via target/action)
+        _ = target?.perform(action, with: self)
+
+        let holdDelay: TimeInterval = 0.25   // pause before repeat starts
+        let repeatInterval: TimeInterval = 0.035
+        let pressTime = Date()
+        var lastRepeat = pressTime
+
+        // Track mouse until release; fire fine-step ticks while held.
+        // Using the 4-param nextEvent with a short timeout so the loop
+        // keeps running (the 2-param version blocks the entire run loop).
+        while true {
+            guard let window = self.window else { break }
+            if let next = window.nextEvent(
+                matching: [.leftMouseUp, .leftMouseDragged],
+                until: Date(timeIntervalSinceNow: repeatInterval),
+                inMode: .eventTracking,
+                dequeue: true
+            ) {
+                if next.type == .leftMouseUp { break }
+            }
+
+            let now = Date()
+            if now.timeIntervalSince(pressTime) >= holdDelay,
+               now.timeIntervalSince(lastRepeat) >= repeatInterval {
+                onHoldTick?()
+                lastRepeat = now
+            }
+        }
+    }
+}
+
 class ControlPanelWindow: NSPanel {
     private weak var edgeLightManager: EdgeLightManager?
     private var hideTimer: Timer?
     private let autoHideDelay: TimeInterval = 3.0
-    private let activeColor = NSColor.systemCyan
+    private let activeColor = NSColor.white
     private var toggleButtons: [String: NSButton] = [:]
+    private var lightDependentButtons: [NSButton] = []
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
 
         super.init(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 44),
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 44),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -30,7 +70,7 @@ class ControlPanelWindow: NSPanel {
     }
 
     private func setupUI() {
-        let container = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 380, height: 44))
+        let container = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 500, height: 44))
         container.material = .hudWindow
         container.state = .active
         container.blendingMode = .behindWindow
@@ -44,24 +84,47 @@ class ControlPanelWindow: NSPanel {
         stackView.edgeInsets = NSEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
+        // Buttons that repeat while held use RepeatButton; others use standard NSButton
+        let repeatIcons: Set<String> = ["sun.min", "sun.max", "flame", "snowflake"]
+
         let buttonDefs: [(String, String, Selector)] = [
-            ("sun.min", "Decrease brightness (Cmd+Shift+Down)", #selector(brightnessDown)),
-            ("sun.max", "Increase brightness (Cmd+Shift+Up)", #selector(brightnessUp)),
-            ("flame", "Make light warmer", #selector(colorWarmer)),
-            ("snowflake", "Make light cooler", #selector(colorCooler)),
-            ("lightbulb", "Toggle light (Cmd+Shift+L)", #selector(toggleLight)),
-            ("display", "Switch monitor", #selector(switchMonitor)),
-            ("display.2", "All monitors", #selector(allMonitors)),
-            ("menubar.rectangle", "Toggle light over menu bar", #selector(toggleMenuBarOverlay)),
-            ("circle.dashed", "Cursor reveal", #selector(toggleCursorReveal)),
-            ("eye.slash", "Show/hide desktop icons", #selector(toggleDesktopIcons)),
-            ("xmark.circle", "Exit", #selector(exitApp)),
+            ("sun.min", "Brightness Down (Cmd+Shift+Down) — hold to repeat", #selector(brightnessDown)),
+            ("sun.max", "Brightness Up (Cmd+Shift+Up) — hold to repeat", #selector(brightnessUp)),
+            ("flame", "Warmer — hold to repeat", #selector(colorWarmer)),
+            ("snowflake", "Cooler — hold to repeat", #selector(colorCooler)),
+            ("lightbulb", "Toggle Light (Cmd+Shift+L)", #selector(toggleLight)),
+            ("display", "Next Monitor", #selector(switchMonitor)),
+            ("display.2", "All Monitors", #selector(allMonitors)),
+            ("menubar.rectangle", "Extend Over Menu Bar", #selector(toggleMenuBarOverlay)),
+            ("circle.dashed", "Cursor Reveal", #selector(toggleCursorReveal)),
+            ("video", "Show in Screen Capture", #selector(toggleScreenCapture)),
+            ("eye.slash", "Hide Desktop Icons", #selector(toggleDesktopIcons)),
+            ("xmark.circle", "Quit Mac Edge Light", #selector(exitApp)),
         ]
 
         var allConstraints: [NSLayoutConstraint] = []
 
         for (imageName, tooltip, action) in buttonDefs {
-            let button = NSButton(frame: NSRect(x: 0, y: 0, width: 36, height: 36))
+            let button: NSButton
+            if repeatIcons.contains(imageName) {
+                let rb = RepeatButton(frame: NSRect(x: 0, y: 0, width: 36, height: 36))
+                // Map each repeat button to its fine-step closure
+                switch imageName {
+                case "sun.min":
+                    rb.onHoldTick = { [weak self] in self?.edgeLightManager?.decreaseBrightnessFine() }
+                case "sun.max":
+                    rb.onHoldTick = { [weak self] in self?.edgeLightManager?.increaseBrightnessFine() }
+                case "flame":
+                    rb.onHoldTick = { [weak self] in self?.edgeLightManager?.increaseColorTemperatureFine() }
+                case "snowflake":
+                    rb.onHoldTick = { [weak self] in self?.edgeLightManager?.decreaseColorTemperatureFine() }
+                default: break
+                }
+                button = rb
+            } else {
+                button = NSButton(frame: NSRect(x: 0, y: 0, width: 36, height: 36))
+            }
+
             button.bezelStyle = .accessoryBarAction
             button.isBordered = false
             button.image = NSImage(systemSymbolName: imageName, accessibilityDescription: tooltip)
@@ -74,8 +137,12 @@ class ControlPanelWindow: NSPanel {
             allConstraints.append(button.widthAnchor.constraint(equalToConstant: 36))
             allConstraints.append(button.heightAnchor.constraint(equalToConstant: 36))
 
-            if ["lightbulb", "display.2", "menubar.rectangle", "circle.dashed", "eye.slash"].contains(imageName) {
+            if ["lightbulb", "display.2", "menubar.rectangle", "circle.dashed", "video", "eye.slash"].contains(imageName) {
                 toggleButtons[imageName] = button
+            }
+
+            if ["sun.min", "sun.max", "flame", "snowflake", "display", "display.2", "menubar.rectangle", "circle.dashed", "video"].contains(imageName) {
+                lightDependentButtons.append(button)
             }
 
             stackView.addArrangedSubview(button)
@@ -142,11 +209,33 @@ class ControlPanelWindow: NSPanel {
 
     func updateToggleStates() {
         let settings = AppSettings.shared
-        toggleButtons["lightbulb"]?.contentTintColor = settings.isLightOn ? activeColor : .white
-        toggleButtons["display.2"]?.contentTintColor = settings.showOnAllMonitors ? activeColor : .white
-        toggleButtons["menubar.rectangle"]?.contentTintColor = settings.extendOverMenuBar ? activeColor : .white
-        toggleButtons["circle.dashed"]?.contentTintColor = settings.cursorRevealEnabled ? activeColor : .white
-        toggleButtons["eye.slash"]?.contentTintColor = settings.desktopIconsHidden ? activeColor : .white
+
+        setToggle("lightbulb", active: settings.isLightOn,
+                  onIcon: "lightbulb.fill", offIcon: "lightbulb")
+        setToggle("display.2", active: settings.showOnAllMonitors,
+                  onIcon: "rectangle.fill.on.rectangle.fill", offIcon: "rectangle.on.rectangle")
+        setToggle("menubar.rectangle", active: settings.extendOverMenuBar,
+                  onIcon: "menubar.rectangle", offIcon: "menubar.rectangle")
+        setToggle("circle.dashed", active: settings.cursorRevealEnabled,
+                  onIcon: "circle.fill", offIcon: "circle.dashed")
+        setToggle("video", active: settings.visibleInCapture,
+                  onIcon: "video.fill", offIcon: "video.slash")
+        setToggle("eye.slash", active: settings.desktopIconsHidden,
+                  onIcon: "eye.slash", offIcon: "eye")
+
+        // Disable controls that don't apply when the light is off
+        let dimColor = NSColor(white: 1.0, alpha: 0.25)
+        for button in lightDependentButtons {
+            button.isEnabled = settings.isLightOn
+            button.contentTintColor = settings.isLightOn ? activeColor : dimColor
+        }
+    }
+
+    private func setToggle(_ key: String, active: Bool, onIcon: String, offIcon: String) {
+        guard let button = toggleButtons[key] else { return }
+        let iconName = active ? onIcon : offIcon
+        button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: button.toolTip)
+        button.contentTintColor = activeColor
     }
 
     func positionOnScreen(_ screen: NSScreen) {
@@ -156,6 +245,7 @@ class ControlPanelWindow: NSPanel {
         setFrameOrigin(NSPoint(x: x, y: y))
     }
 
+    // Single-click actions (also fires on first press for repeat buttons)
     @objc private func brightnessDown() {
         edgeLightManager?.decreaseBrightness()
     }
@@ -190,6 +280,10 @@ class ControlPanelWindow: NSPanel {
 
     @objc private func toggleCursorReveal() {
         edgeLightManager?.toggleCursorReveal()
+    }
+
+    @objc private func toggleScreenCapture() {
+        edgeLightManager?.toggleScreenCapture()
     }
 
     @objc private func toggleDesktopIcons() {

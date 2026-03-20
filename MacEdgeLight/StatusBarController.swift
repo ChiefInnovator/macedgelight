@@ -36,6 +36,7 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Toggle All Monitors", action: #selector(allMonitors), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Extend Over Menu Bar", action: #selector(toggleMenuBarOverlay), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Cursor Reveal", action: #selector(toggleCursorReveal), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
 
@@ -78,7 +79,7 @@ class StatusBarController {
         - Floating control toolbar
         - Color temperature controls (warmer/cooler)
         - Switch between monitors or show on all monitors
-        - Excluded from screen capture (invisible in Zoom/Teams sharing)
+        - Toggle screen capture visibility (hidden by default)
 
         Based on Windows Edge Light by Scott Hanselman
         """
@@ -121,6 +122,10 @@ class StatusBarController {
 
     @objc private func toggleCursorReveal() {
         edgeLightManager?.toggleCursorReveal()
+    }
+
+    @objc private func toggleScreenCapture() {
+        edgeLightManager?.toggleScreenCapture()
     }
 
     @objc private func toggleDesktopIcons() {

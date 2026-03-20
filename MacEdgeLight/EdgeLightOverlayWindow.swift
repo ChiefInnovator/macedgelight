@@ -41,7 +41,7 @@ class EdgeLightOverlayWindow: NSWindow {
         self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
         self.isReleasedWhenClosed = false
 
-        // Exclude from screen capture (like the Windows WDA_EXCLUDEFROMCAPTURE)
+        // Default: exclude from screen capture (togglable via settings)
         self.sharingType = .none
 
         self.contentView = edgeLightView
@@ -69,6 +69,9 @@ class EdgeLightOverlayWindow: NSWindow {
             edgeLightView.topInset = menuBarHeight
         }
 
+        // Screen capture visibility
+        self.sharingType = settings.visibleInCapture ? .readOnly : .none
+
         // Cursor reveal
         edgeLightView.cursorRevealEnabled = settings.cursorRevealEnabled
         if settings.cursorRevealEnabled {
@@ -83,9 +86,11 @@ class EdgeLightOverlayWindow: NSWindow {
 
     private func startCursorTracking() {
         guard cursorTrackingTimer == nil else { return }
-        cursorTrackingTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.updateCursorPosition()
         }
+        RunLoop.current.add(timer, forMode: .common)
+        cursorTrackingTimer = timer
     }
 
     private func stopCursorTracking() {

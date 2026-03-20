@@ -57,9 +57,11 @@ class EdgeLightView: NSView {
 
     private func startAnimationIfNeeded() {
         guard animationTimer == nil else { return }
-        animationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.animationTick()
         }
+        RunLoop.current.add(timer, forMode: .common)
+        animationTimer = timer
     }
 
     private func animationTick() {
