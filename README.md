@@ -88,6 +88,18 @@ The floating toolbar provides quick access to all features:
 
 - macOS 13 Ventura or later
 
+## Installation
+
+Download the latest `.dmg` or `.zip` from [Releases](https://github.com/ChiefInnovator/macedgelight/releases).
+
+Since the app is not signed with an Apple Developer ID, macOS Gatekeeper will block it on first launch. To fix this, open Terminal and run:
+
+```bash
+xattr -cr /Applications/MacEdgeLight.app
+```
+
+Or: right-click the app, choose **Open**, then click **Open** in the dialog.
+
 ## Building
 
 Open `MacEdgeLight.xcodeproj` in Xcode and build, or use the Makefile:
