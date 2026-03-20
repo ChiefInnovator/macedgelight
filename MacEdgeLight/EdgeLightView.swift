@@ -26,15 +26,19 @@ class EdgeLightView: NSView {
     }
     private let cursorRevealRadius: CGFloat = 60
 
+    var frameThickness: CGFloat = 60 {
+        didSet { startAnimationIfNeeded() }
+    }
+
     // Animated values used for drawing
     private var displayedBrightness: Double = 1.0
     private var displayedColorTemperature: Double = 0.5
     private var displayedTopInset: CGFloat = 0
+    private var displayedFrameThickness: CGFloat = 60
 
     private var animationTimer: Timer?
     private let lerpSpeed: Double = 0.12 // per-frame lerp factor (~0.3s to settle)
 
-    private let frameThickness: CGFloat = 60
     private let outerCornerRadius: CGFloat = 20
     private let innerCornerRadius: CGFloat = 12
     private let glowRadius: CGFloat = 40
@@ -68,22 +72,26 @@ class EdgeLightView: NSView {
         let targetBrightness = isLightOn ? brightness : 0.0
         let targetColorTemp = colorTemperature
         let targetInset = topInset
+        let targetThickness = frameThickness
 
         displayedBrightness += (targetBrightness - displayedBrightness) * lerpSpeed
         displayedColorTemperature += (targetColorTemp - displayedColorTemperature) * lerpSpeed
         displayedTopInset += (targetInset - displayedTopInset) * CGFloat(lerpSpeed)
+        displayedFrameThickness += (targetThickness - displayedFrameThickness) * CGFloat(lerpSpeed)
 
         let brightnessSettled = abs(displayedBrightness - targetBrightness) < 0.002
         let colorSettled = abs(displayedColorTemperature - targetColorTemp) < 0.002
         let insetSettled = abs(displayedTopInset - targetInset) < 0.5
+        let thicknessSettled = abs(displayedFrameThickness - targetThickness) < 0.5
 
         if brightnessSettled { displayedBrightness = targetBrightness }
         if colorSettled { displayedColorTemperature = targetColorTemp }
         if insetSettled { displayedTopInset = targetInset }
+        if thicknessSettled { displayedFrameThickness = targetThickness }
 
         needsDisplay = true
 
-        if brightnessSettled && colorSettled && insetSettled {
+        if brightnessSettled && colorSettled && insetSettled && thicknessSettled {
             animationTimer?.invalidate()
             animationTimer = nil
         }
@@ -115,7 +123,7 @@ class EdgeLightView: NSView {
         let outerPath = CGPath(roundedRect: outerRect, cornerWidth: outerCornerRadius, cornerHeight: outerCornerRadius, transform: nil)
 
         // Inner rounded rect (the transparent hole)
-        let innerRect = drawBounds.insetBy(dx: frameThickness, dy: frameThickness)
+        let innerRect = drawBounds.insetBy(dx: displayedFrameThickness, dy: displayedFrameThickness)
         let innerPath = CGPath(roundedRect: innerRect, cornerWidth: innerCornerRadius, cornerHeight: innerCornerRadius, transform: nil)
 
         // Create frame path (outer minus inner)
@@ -155,7 +163,8 @@ class EdgeLightView: NSView {
         context.clip(using: .evenOdd)
 
         // Gradient from top-left to bottom-right (matching Windows version)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        // Use the display's color space for accurate color on wide-gamut (P3) displays
+        let colorSpace = window?.screen?.colorSpace?.cgColorSpace ?? CGColorSpaceCreateDeviceRGB()
         let white = NSColor.white.withAlphaComponent(alpha)
         let tinted = fillColor
         let slightlyDimmed = baseColor.withAlphaComponent(alpha * 0.94)
@@ -239,7 +248,7 @@ class EdgeLightView: NSView {
         // Cursor reveal: punch a feathered circle through the light
         if cursorRevealEnabled, let pos = cursorPosition {
             context.setBlendMode(.destinationOut)
-            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            let colorSpace = window?.screen?.colorSpace?.cgColorSpace ?? CGColorSpaceCreateDeviceRGB()
             let cutoutColors = [
                 NSColor.black.withAlphaComponent(1.0).cgColor,
                 NSColor.black.withAlphaComponent(1.0).cgColor,

@@ -57,6 +57,7 @@ class EdgeLightOverlayWindow: NSWindow {
         edgeLightView.brightness = settings.brightness
         edgeLightView.colorTemperature = settings.colorTemperature
         edgeLightView.isLightOn = settings.isLightOn
+        edgeLightView.frameThickness = CGFloat(settings.borderWidth)
 
         // Shift the light frame below the menu bar, or extend over it
         if settings.extendOverMenuBar {

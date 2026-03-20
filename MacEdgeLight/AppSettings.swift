@@ -17,6 +17,7 @@ class AppSettings: ObservableObject {
         static let cursorRevealEnabled = "cursorRevealEnabled"
         static let desktopIconsHidden = "desktopIconsHidden"
         static let visibleInCapture = "visibleInCapture"
+        static let borderWidth = "borderWidth"
     }
 
     @Published var brightness: Double {
@@ -63,6 +64,20 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(visibleInCapture, forKey: Keys.visibleInCapture) }
     }
 
+    @Published var borderWidth: Double {
+        didSet { defaults.set(borderWidth, forKey: Keys.borderWidth) }
+    }
+
+    func resetToDefaults() {
+        brightness = 1.0
+        colorTemperature = 0.5
+        isLightOn = true
+        extendOverMenuBar = false
+        cursorRevealEnabled = false
+        visibleInCapture = false
+        borderWidth = 60.0
+    }
+
     private init() {
         // Register defaults
         defaults.register(defaults: [
@@ -77,6 +92,7 @@ class AppSettings: ObservableObject {
             Keys.cursorRevealEnabled: false,
             Keys.desktopIconsHidden: false,
             Keys.visibleInCapture: false,
+            Keys.borderWidth: 60.0,
         ])
 
         self.brightness = defaults.double(forKey: Keys.brightness)
@@ -90,5 +106,6 @@ class AppSettings: ObservableObject {
         self.cursorRevealEnabled = defaults.bool(forKey: Keys.cursorRevealEnabled)
         self.desktopIconsHidden = defaults.bool(forKey: Keys.desktopIconsHidden)
         self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)
+        self.borderWidth = defaults.double(forKey: Keys.borderWidth)
     }
 }

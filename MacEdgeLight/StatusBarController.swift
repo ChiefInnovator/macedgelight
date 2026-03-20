@@ -32,6 +32,9 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Warmer Light", action: #selector(colorWarmer), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Cooler Light", action: #selector(colorCooler), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Thicker Border", action: #selector(borderThicker), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Thinner Border", action: #selector(borderThinner), keyEquivalent: ""))
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Switch Monitor", action: #selector(switchMonitor), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Toggle All Monitors", action: #selector(allMonitors), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Extend Over Menu Bar", action: #selector(toggleMenuBarOverlay), keyEquivalent: ""))
@@ -49,7 +52,9 @@ class StatusBarController {
         launchAtLoginItem = launchItem
         menu.addItem(launchItem)
 
+        menu.addItem(NSMenuItem(title: "Reset to Defaults", action: #selector(resetDefaults), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "About Mac Edge Light", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Quit Mac Edge Light", action: #selector(quit), keyEquivalent: "q"))
 
         // Set targets
@@ -108,6 +113,14 @@ class StatusBarController {
         edgeLightManager?.decreaseColorTemperature()
     }
 
+    @objc private func borderThicker() {
+        edgeLightManager?.increaseBorderWidth()
+    }
+
+    @objc private func borderThinner() {
+        edgeLightManager?.decreaseBorderWidth()
+    }
+
     @objc private func switchMonitor() {
         edgeLightManager?.moveToNextMonitor()
     }
@@ -142,6 +155,33 @@ class StatusBarController {
         settings.launchAtLogin = newValue
         LoginItemManager.shared.setLaunchAtLogin(enabled: newValue)
         launchAtLoginItem?.state = newValue ? .on : .off
+    }
+
+    @objc private func resetDefaults() {
+        edgeLightManager?.resetToDefaults()
+    }
+
+    @objc private func showAbout() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+
+        let alert = NSAlert()
+        alert.messageText = "Mac Edge Light"
+        alert.informativeText = """
+        Version \(version) (Build \(build))
+
+        An ambient edge light for macOS that wraps your screen in a glowing frame.
+
+        Inspired by Windows Edge Light by Scott Hanselman.
+
+        \u{00A9} 2026 Richard Crane. All rights reserved.
+        """
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+
+        // Bring our app to front so the alert is visible
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     @objc private func quit() {

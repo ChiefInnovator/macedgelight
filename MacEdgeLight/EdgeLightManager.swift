@@ -14,6 +14,10 @@ class EdgeLightManager {
     private let maxBrightness = 2.0
     private let colorTempStep = 0.1
     private let colorTempStepFine = 0.015
+    private let borderWidthStep = 10.0
+    private let borderWidthStepFine = 2.0
+    private let minBorderWidth = 10.0
+    private let maxBorderWidth = 150.0
 
     init() {
         monitorManager = MonitorManager(settings: settings)
@@ -111,6 +115,32 @@ class EdgeLightManager {
     func decreaseColorTemperatureFine() {
         settings.colorTemperature = max(0.0, settings.colorTemperature - colorTempStepFine)
         monitorManager.applySettingsToAll()
+    }
+
+    func increaseBorderWidth() {
+        settings.borderWidth = min(maxBorderWidth, settings.borderWidth + borderWidthStep)
+        monitorManager.applySettingsToAll()
+    }
+
+    func decreaseBorderWidth() {
+        settings.borderWidth = max(minBorderWidth, settings.borderWidth - borderWidthStep)
+        monitorManager.applySettingsToAll()
+    }
+
+    func increaseBorderWidthFine() {
+        settings.borderWidth = min(maxBorderWidth, settings.borderWidth + borderWidthStepFine)
+        monitorManager.applySettingsToAll()
+    }
+
+    func decreaseBorderWidthFine() {
+        settings.borderWidth = max(minBorderWidth, settings.borderWidth - borderWidthStepFine)
+        monitorManager.applySettingsToAll()
+    }
+
+    func resetToDefaults() {
+        settings.resetToDefaults()
+        monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
     }
 
     func toggleExtendOverMenuBar() {
