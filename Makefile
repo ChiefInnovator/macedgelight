@@ -6,7 +6,7 @@ EXPORT_PATH = $(BUILD_DIR)/export
 APP_PATH = $(EXPORT_PATH)/$(APP_NAME).app
 DMG_PATH = $(BUILD_DIR)/$(APP_NAME).dmg
 ZIP_PATH = $(BUILD_DIR)/$(APP_NAME).zip
-VERSION = $(shell /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" MacEdgeLight/Info.plist 2>/dev/null || echo "1.0")
+VERSION = $(shell grep MARKETING_VERSION MacEdgeLight.xcodeproj/project.pbxproj | head -1 | sed 's/.*= *\(.*\);/\1/' | tr -d ' ')
 
 .PHONY: all clean build archive export dmg zip release
 
