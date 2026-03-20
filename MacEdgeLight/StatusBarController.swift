@@ -5,6 +5,7 @@ class StatusBarController {
     private weak var edgeLightManager: EdgeLightManager?
     private var toggleControlsItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
+    private var menuBarModeItem: NSMenuItem?
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
@@ -37,7 +38,9 @@ class StatusBarController {
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Switch Monitor", action: #selector(switchMonitor), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Toggle All Monitors", action: #selector(allMonitors), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Extend Over Menu Bar", action: #selector(toggleMenuBarOverlay), keyEquivalent: ""))
+        let mbItem = NSMenuItem(title: menuBarModeTitle(), action: #selector(toggleMenuBarOverlay), keyEquivalent: "")
+        menuBarModeItem = mbItem
+        menu.addItem(mbItem)
         menu.addItem(NSMenuItem(title: "Cursor Reveal", action: #selector(toggleCursorReveal), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
@@ -130,7 +133,16 @@ class StatusBarController {
     }
 
     @objc private func toggleMenuBarOverlay() {
-        edgeLightManager?.toggleExtendOverMenuBar()
+        edgeLightManager?.cycleMenuBarMode()
+        menuBarModeItem?.title = menuBarModeTitle()
+    }
+
+    private func menuBarModeTitle() -> String {
+        switch AppSettings.shared.menuBarMode {
+        case 1: return "Menu Bar: Extend"
+        case 2: return "Menu Bar: Auto"
+        default: return "Menu Bar: Below"
+        }
     }
 
     @objc private func toggleCursorReveal() {

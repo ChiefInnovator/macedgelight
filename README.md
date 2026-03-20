@@ -25,8 +25,10 @@ A macOS ambient edge light that wraps your screen in a glowing frame. Inspired b
 - Soft-edged reveal with solid center fading to full glow
 
 **Menu Bar Control**
-- Toggle whether the light extends over or sits below the macOS menu bar
-- When below, the frame shifts down cleanly (no clipping)
+- Three modes: Below, Extend, and Auto
+- **Below** — light stays under the menu bar
+- **Extend** — light covers the menu bar
+- **Auto** — light extends over menu bar but smoothly reveals it when your cursor enters the menu bar area, then extends back when you move away
 
 **Desktop Icons**
 - Show/hide all desktop icons with one click
@@ -77,7 +79,7 @@ The floating toolbar provides quick access to all features:
 | Lightbulb | Toggle light on/off — double-click to reset | Filled when on |
 | Monitor | Switch to next monitor | |
 | Monitors | All monitors mode | Filled when on |
-| Menu bar | Extend over menu bar | |
+| Menu bar | Menu bar mode: Below → Extend → Auto | Cycles through 3 states |
 | Circle | Cursor reveal mode | Filled when on |
 | Video | Show in screen capture | Filled when on |
 | Eye | Hide desktop icons | Swaps to eye.slash |
@@ -116,17 +118,34 @@ The app runs without sandbox entitlements to allow the overlay window and deskto
 
 ## How It Works
 
-The edge light is drawn using Core Graphics with multiple layered glow passes:
+The edge light is rendered in a fullscreen, click-through overlay window using Core Graphics. Each frame is drawn with multiple layered passes:
 
-1. **Outer glow** — concentric expanding rectangles with decreasing opacity
-2. **Solid frame** — gradient fill from corner to corner (white → tinted → white)
-3. **Inner glow** — soft light bleeding inward from the frame edge
-4. **Bloom** — additive `.plusLighter` compositing for brightness above 100%
-5. **Cursor cutout** — `.destinationOut` radial gradient to punch through the glow
+### Rendering Pipeline
 
-The overlay window sits at a custom window level (just below or above the menu bar), ignores all mouse events, and is excluded from screen capture by default via `sharingType = .none` (togglable to `.readOnly` to make it visible in recordings).
+1. **Outer glow** — Concentric expanding rounded rectangles drawn outward from the frame edge, each with decreasing opacity (`alpha * 0.03 * falloff`). Creates the soft light spill effect around the border.
+
+2. **Solid frame** — The main visible border. A frame shape (outer rect minus inner rect) is filled with a diagonal linear gradient (white → tinted → white) using even-odd clipping. Color temperature shifts the tint from cool blue-white (220, 235, 255) to warm amber (255, 220, 180).
+
+3. **Inner glow** — Similar to outer glow but bleeding inward from the frame edge, giving the border a soft volumetric look rather than a hard cutoff.
+
+4. **Bloom mode** — When brightness exceeds 100%, the excess is rendered as additive light using `.plusLighter` blend mode. This creates a white-hot bloom effect: first an additive fill over the solid frame, then expanding glow rings (`glowRadius + glowRadius * bloom`) that spill further outward as brightness increases. At 200% brightness, the bloom radius doubles and the glow becomes intensely bright.
+
+5. **Cursor cutout** — When cursor reveal is enabled, a radial gradient is drawn in `.destinationOut` blend mode centered on the cursor position. The gradient goes from fully opaque (punches through the glow) at the center to fully transparent at the edge, creating a feathered reveal circle.
+
+### Animation System
+
+All visual properties (brightness, color temperature, border width, top inset) use per-frame lerp interpolation at 60fps. When a target value changes, an animation timer fires and each displayed value moves 12% closer to its target per frame, settling in ~0.3 seconds. Timers run in `.common` run loop mode so animations continue during button hold interactions.
+
+### Display Quality
+
+- **Retina/HiDPI** — Core Graphics rendering automatically uses the window's backing scale factor, so all glow paths, gradients, and the cursor cutout render at full Retina resolution (2x–3x pixel density).
+- **Wide-gamut color** — Gradients use the display's native color space (`NSScreen.colorSpace`) for accurate color reproduction on P3 displays (MacBook Pro, Studio Display, Pro Display XDR), with a fallback to device RGB.
+
+### Window Architecture
+
+The overlay window sits at a custom window level (just below or above the menu bar depending on mode), ignores all mouse events (`ignoresMouseEvents = true`), and is excluded from screen capture by default via `sharingType = .none` (togglable to `.readOnly` to make it visible in recordings). One overlay window is created per active monitor.
 
 ## Credits
 
 - Original concept: [Scott Hanselman's EdgeLight](https://github.com/shanselman/EdgeLight)
-- macOS implementation by Richard Crane
+- macOS implementation by [Richard Crane](https://inventingfirewith.ai)

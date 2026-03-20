@@ -143,8 +143,8 @@ class EdgeLightManager {
         controlPanel?.updateToggleStates()
     }
 
-    func toggleExtendOverMenuBar() {
-        settings.extendOverMenuBar.toggle()
+    func cycleMenuBarMode() {
+        settings.menuBarMode = (settings.menuBarMode + 1) % 3
         monitorManager.applySettingsToAll()
         controlPanel?.updateToggleStates()
     }

@@ -13,7 +13,7 @@ class AppSettings: ObservableObject {
         static let currentMonitorIndex = "currentMonitorIndex"
         static let showOnAllMonitors = "showOnAllMonitors"
         static let launchAtLogin = "launchAtLogin"
-        static let extendOverMenuBar = "extendOverMenuBar"
+        static let menuBarMode = "menuBarMode"
         static let cursorRevealEnabled = "cursorRevealEnabled"
         static let desktopIconsHidden = "desktopIconsHidden"
         static let visibleInCapture = "visibleInCapture"
@@ -48,8 +48,9 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(launchAtLogin, forKey: Keys.launchAtLogin) }
     }
 
-    @Published var extendOverMenuBar: Bool {
-        didSet { defaults.set(extendOverMenuBar, forKey: Keys.extendOverMenuBar) }
+    // 0 = below menu bar, 1 = extend over, 2 = auto (reveal on hover)
+    @Published var menuBarMode: Int {
+        didSet { defaults.set(menuBarMode, forKey: Keys.menuBarMode) }
     }
 
     @Published var cursorRevealEnabled: Bool {
@@ -72,7 +73,7 @@ class AppSettings: ObservableObject {
         brightness = 1.0
         colorTemperature = 0.5
         isLightOn = true
-        extendOverMenuBar = false
+        menuBarMode = 2
         cursorRevealEnabled = false
         visibleInCapture = false
         borderWidth = 60.0
@@ -88,7 +89,7 @@ class AppSettings: ObservableObject {
             Keys.currentMonitorIndex: 0,
             Keys.showOnAllMonitors: false,
             Keys.launchAtLogin: false,
-            Keys.extendOverMenuBar: false,
+            Keys.menuBarMode: 2,
             Keys.cursorRevealEnabled: false,
             Keys.desktopIconsHidden: false,
             Keys.visibleInCapture: false,
@@ -102,7 +103,15 @@ class AppSettings: ObservableObject {
         self.currentMonitorIndex = defaults.integer(forKey: Keys.currentMonitorIndex)
         self.showOnAllMonitors = defaults.bool(forKey: Keys.showOnAllMonitors)
         self.launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
-        self.extendOverMenuBar = defaults.bool(forKey: Keys.extendOverMenuBar)
+        // Migration: old bool key -> new int key
+        if defaults.object(forKey: Keys.menuBarMode) != nil {
+            self.menuBarMode = defaults.integer(forKey: Keys.menuBarMode)
+        } else if defaults.bool(forKey: "extendOverMenuBar") {
+            self.menuBarMode = 1
+            defaults.set(1, forKey: Keys.menuBarMode)
+        } else {
+            self.menuBarMode = 2
+        }
         self.cursorRevealEnabled = defaults.bool(forKey: Keys.cursorRevealEnabled)
         self.desktopIconsHidden = defaults.bool(forKey: Keys.desktopIconsHidden)
         self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)

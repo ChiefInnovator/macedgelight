@@ -3,6 +3,9 @@ import Cocoa
 class EdgeLightOverlayWindow: NSWindow {
     let edgeLightView: EdgeLightView
     private var cursorTrackingTimer: Timer?
+    private var menuBarTrackingTimer: Timer?
+    private var menuBarRevealed: Bool = false
+    private var menuBarHeight: CGFloat = 25
 
     convenience init(for screen: NSScreen) {
         self.init(
@@ -59,15 +62,26 @@ class EdgeLightOverlayWindow: NSWindow {
         edgeLightView.isLightOn = settings.isLightOn
         edgeLightView.frameThickness = CGFloat(settings.borderWidth)
 
-        // Shift the light frame below the menu bar, or extend over it
-        if settings.extendOverMenuBar {
+        // Menu bar mode: 0 = below, 1 = extend over, 2 = auto reveal on hover
+        let menuBarH = (self.screen ?? NSScreen.main)
+            .map { $0.frame.maxY - $0.visibleFrame.maxY } ?? 25
+        self.menuBarHeight = menuBarH
+
+        switch settings.menuBarMode {
+        case 1: // Extend
             self.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 1)
             edgeLightView.topInset = 0
-        } else {
+            stopMenuBarTracking()
+        case 2: // Auto
+            self.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 1)
+            if !menuBarRevealed {
+                edgeLightView.topInset = 0
+            }
+            startMenuBarTracking()
+        default: // 0: Below
             self.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue - 1)
-            let menuBarHeight = (self.screen ?? NSScreen.main)
-                .map { $0.frame.maxY - $0.visibleFrame.maxY } ?? 25
-            edgeLightView.topInset = menuBarHeight
+            edgeLightView.topInset = menuBarH
+            stopMenuBarTracking()
         }
 
         // Screen capture visibility
@@ -80,6 +94,42 @@ class EdgeLightOverlayWindow: NSWindow {
         } else {
             stopCursorTracking()
             edgeLightView.cursorPosition = nil
+        }
+    }
+
+    // MARK: - Menu Bar Auto-Reveal
+
+    private func startMenuBarTracking() {
+        guard menuBarTrackingTimer == nil else { return }
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            self?.updateMenuBarReveal()
+        }
+        RunLoop.current.add(timer, forMode: .common)
+        menuBarTrackingTimer = timer
+    }
+
+    private func stopMenuBarTracking() {
+        menuBarTrackingTimer?.invalidate()
+        menuBarTrackingTimer = nil
+        menuBarRevealed = false
+    }
+
+    private func updateMenuBarReveal() {
+        let mouseLocation = NSEvent.mouseLocation
+        guard let screen = self.screen ?? NSScreen.main else { return }
+
+        // Cursor is in the menu bar if it's at or above the top of the visible area
+        // and within this screen's horizontal bounds
+        let cursorInMenuBar = mouseLocation.y >= screen.visibleFrame.maxY
+            && mouseLocation.x >= screen.frame.minX
+            && mouseLocation.x <= screen.frame.maxX
+
+        if cursorInMenuBar && !menuBarRevealed {
+            menuBarRevealed = true
+            edgeLightView.topInset = menuBarHeight
+        } else if !cursorInMenuBar && menuBarRevealed {
+            menuBarRevealed = false
+            edgeLightView.topInset = 0
         }
     }
 

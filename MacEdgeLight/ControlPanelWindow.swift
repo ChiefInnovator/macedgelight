@@ -241,8 +241,7 @@ class ControlPanelWindow: NSPanel {
                   onIcon: "lightbulb.fill", offIcon: "lightbulb")
         setToggle("display.2", active: settings.showOnAllMonitors,
                   onIcon: "rectangle.fill.on.rectangle.fill", offIcon: "rectangle.on.rectangle")
-        setToggle("menubar.rectangle", active: settings.extendOverMenuBar,
-                  onIcon: "menubar.rectangle", offIcon: "menubar.rectangle")
+        updateMenuBarModeButton(settings)
         setToggle("circle.dashed", active: settings.cursorRevealEnabled,
                   onIcon: "circle.fill", offIcon: "circle.dashed")
         setToggle("video", active: settings.visibleInCapture,
@@ -287,6 +286,26 @@ class ControlPanelWindow: NSPanel {
         guard let button = toggleButtons[key] else { return }
         let iconName = active ? onIcon : offIcon
         button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: button.toolTip)
+        button.contentTintColor = activeColor
+    }
+
+    private func updateMenuBarModeButton(_ settings: AppSettings) {
+        guard let button = toggleButtons["menubar.rectangle"] else { return }
+        let iconName: String
+        let tooltip: String
+        switch settings.menuBarMode {
+        case 1:
+            iconName = "rectangle.topthird.inset.filled"
+            tooltip = "Menu Bar: Extend (click to cycle)"
+        case 2:
+            iconName = "rectangle.arrowtriangle.2.outward"
+            tooltip = "Menu Bar: Auto (click to cycle)"
+        default:
+            iconName = "menubar.rectangle"
+            tooltip = "Menu Bar: Below (click to cycle)"
+        }
+        button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: tooltip)
+        button.toolTip = tooltip
         button.contentTintColor = activeColor
     }
 
@@ -335,7 +354,7 @@ class ControlPanelWindow: NSPanel {
     }
 
     @objc private func toggleMenuBarOverlay() {
-        edgeLightManager?.toggleExtendOverMenuBar()
+        edgeLightManager?.cycleMenuBarMode()
     }
 
     @objc private func toggleCursorReveal() {
