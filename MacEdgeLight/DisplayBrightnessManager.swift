@@ -10,6 +10,8 @@ class DisplayBrightnessManager {
     static let shared = DisplayBrightnessManager()
 
     private(set) var isBoosted = false
+    /// True while we're changing brightness, so screen-change observers can ignore the notification
+    private(set) var isChanging = false
 
     private var overlayWindows: [NSWindow] = []
     private var metalDevice: MTLDevice?
@@ -57,13 +59,16 @@ class DisplayBrightnessManager {
     // MARK: - Activate / Deactivate
 
     private func activate() {
+        isChanging = true
         saveCurrentBrightness()
         setMaxBrightness()
         createOverlays()
         isBoosted = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
     }
 
     private func deactivate() {
+        isChanging = true
         renderTimer?.invalidate()
         renderTimer = nil
         for window in overlayWindows {
@@ -72,6 +77,7 @@ class DisplayBrightnessManager {
         overlayWindows.removeAll()
         restoreBrightness()
         isBoosted = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
     }
 
     // MARK: - Hardware brightness

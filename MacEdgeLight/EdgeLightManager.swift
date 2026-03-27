@@ -6,6 +6,7 @@ class EdgeLightManager {
     private var hotkeyManager = HotkeyManager()
     private var controlPanel: ControlPanelWindow?
     private var statusBar: StatusBarController?
+    private var magnifierWindow: MagnifierWindow?
     private var screenChangeObserver: Any?
 
     private let brightnessStep = 0.15
@@ -49,12 +50,18 @@ class EdgeLightManager {
             brightnessDown: { [weak self] in self?.decreaseBrightness() }
         )
 
+        // Restore magnifier state
+        if settings.magnifierEnabled {
+            showMagnifier()
+        }
+
         // Listen for screen configuration changes (monitor plug/unplug)
         screenChangeObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            guard !DisplayBrightnessManager.shared.isChanging else { return }
             self?.monitorManager.refreshForScreenChanges()
             self?.positionControlPanel()
         }
@@ -63,6 +70,7 @@ class EdgeLightManager {
     func stop() {
         hotkeyManager.unregister()
         monitorManager.removeAllOverlays()
+        hideMagnifier()
         controlPanel?.close()
         if let observer = screenChangeObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -138,7 +146,20 @@ class EdgeLightManager {
     }
 
     func resetToDefaults() {
+        let wasDesktopHidden = settings.desktopIconsHidden
         settings.resetToDefaults()
+        // Restore desktop icons if they were hidden
+        if wasDesktopHidden {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+            task.arguments = ["write", "com.apple.finder", "CreateDesktop", "-bool", "true"]
+            try? task.run()
+            task.waitUntilExit()
+            let killall = Process()
+            killall.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killall.arguments = ["Finder"]
+            try? killall.run()
+        }
         monitorManager.applySettingsToAll()
         controlPanel?.updateToggleStates()
     }
@@ -175,6 +196,38 @@ class EdgeLightManager {
         killall.arguments = ["Finder"]
         try? killall.run()
         controlPanel?.updateToggleStates()
+    }
+
+    // MARK: - Display Brightness Boost
+
+    func toggleDisplayBrightness() {
+        DisplayBrightnessManager.shared.toggle()
+        controlPanel?.updateToggleStates()
+    }
+
+    // MARK: - Magnifier
+
+    func toggleMagnifier() {
+        settings.magnifierEnabled.toggle()
+        if settings.magnifierEnabled {
+            showMagnifier()
+        } else {
+            hideMagnifier()
+        }
+        controlPanel?.updateToggleStates()
+    }
+
+    private func showMagnifier() {
+        if magnifierWindow == nil {
+            magnifierWindow = MagnifierWindow()
+        }
+        magnifierWindow?.orderFrontRegardless()
+        magnifierWindow?.startTracking()
+    }
+
+    private func hideMagnifier() {
+        magnifierWindow?.stopTracking()
+        magnifierWindow?.orderOut(nil)
     }
 
     // MARK: - Monitor Controls
