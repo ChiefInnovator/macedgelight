@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run MacEdgeLight",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/MacEdgeLight.app/Contents/MacOS/MacEdgeLight",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "preLaunchTask": "Build Debug",
+      "terminal": "console"
+    },
+    {
+      "name": "Attach to MacEdgeLight",
+      "type": "lldb",
+      "request": "attach",
+      "program": "${workspaceFolder}/build/Debug/MacEdgeLight.app/Contents/MacOS/MacEdgeLight"
+    }
+  ]
+}
