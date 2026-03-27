@@ -23,7 +23,9 @@ MacEdgeLightApp (entry point)
 │   ├── ControlPanelWindow (floating HUD toolbar)
 │   ├── StatusBarController (menu bar icon + dropdown)
 │   ├── HotkeyManager (global keyboard shortcuts)
-│   └── LoginItemManager (launch at login via SMAppService)
+│   ├── LoginItemManager (launch at login via SMAppService)
+│   ├── DisplayBrightnessManager (XDR brightness boost)
+│   └── MagnifierWindow (cursor magnifier loupe)
 ```
 
 ### Data Flow
@@ -57,6 +59,7 @@ User input (button / hotkey / menu)
 | desktopIconsHidden | Bool | false | — | Yes |
 | visibleInCapture | Bool | false | — | Yes |
 | borderWidth | Double | 60.0 | 10 – 150 | Yes |
+| magnifierEnabled | Bool | false | — | Yes |
 
 ### Menu Bar Modes
 
@@ -147,8 +150,10 @@ This gives smooth ease-out behavior, settling to within 0.2% in ~25 frames (~0.4
 
 | Window | Level | Type | Click-through |
 |---|---|---|---|
+| XDR brightness overlay | mainMenu - 2 | NSWindow | Yes (ignoresMouseEvents) |
 | EdgeLightOverlayWindow | mainMenu ± 1 | NSWindow | Yes (ignoresMouseEvents) |
-| ControlPanelWindow | mainMenu + 2 | NSPanel | No (interactive) |
+| ControlPanelWindow | mainMenu + 2 | NSPanel | No (interactive, canBecomeKey for tooltips) |
+| MagnifierWindow | mainMenu + 3 | NSPanel | Yes (ignoresMouseEvents) |
 | macOS menu bar | mainMenu (24) | System | — |
 
 The control panel must be above the overlay to remain visible when the border is thick.
@@ -162,7 +167,30 @@ The control panel must be above the overlay to remain visible when the border is
 - `sharingType = .none` — hidden from screen capture (togglable to `.readOnly`)
 - `collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]`
 
+## XDR Brightness Boost
+
+On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/Max+, Pro Display XDR), a toggle enables full XDR brightness using the same technique as Vivid:
+
+1. A full-screen borderless overlay window with a `CAMetalLayer` sublayer
+2. The Metal layer uses `.rgba16Float` pixel format and `CGColorSpace.extendedLinearDisplayP3`
+3. `wantsExtendedDynamicRangeContent = true` signals the compositor to unlock XDR mode
+4. The view's root layer has `compositingFilter = "multiplyBlendMode"` for cross-window compositing
+5. The Metal layer renders a clear color with values > 1.0 (using `maximumExtendedDynamicRangeColorComponentValue`)
+6. A 1-second timer re-renders to keep EDR engaged
+
+The overlay window sits at `mainMenu - 2` (below the edge light overlay). `DisplayBrightnessManager` is a singleton with `activate()`/`deactivate()` methods; brightness is restored on app quit via `applicationWillTerminate`.
+
+Availability is checked via `NSScreen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0`.
+
 ## Control Panel
+
+### Button Layout
+
+Buttons are split into two groups separated by a thin vertical divider:
+
+**Light-dependent** (dimmed at 40% alpha when light is off): brightness up/down, color warmer/cooler, border thicker/thinner, next monitor, all monitors, menu bar mode, cursor reveal, screen capture
+
+**Always-active**: toggle light, XDR brightness, magnifier, desktop icons, launch at login, reset, quit
 
 ### Button Types
 
@@ -180,7 +208,11 @@ intensity = clamp((overlap - 40) / 100) * brightness
 backgroundColor alpha = min(0.85, intensity * 0.8)
 ```
 
-When the light is off, the background clears to fully transparent (pure HUD material).
+When the light is off, the background resets to the baseline dark background (0.1 white, 0.95 alpha).
+
+### Baseline Background
+
+The control panel has a persistent dark background (`NSColor(white: 0.1, alpha: 0.95)`) using `.dark` material for readability against any desktop. The dynamic glow overlap calculation increases opacity further when the edge light is bright and thick.
 
 ## Multi-Monitor
 
@@ -264,6 +296,8 @@ Notarization credentials stored in keychain as `MacEdgeLightNotarize` profile.
 | StatusBarController.swift | Menu bar icon and dropdown menu |
 | HotkeyManager.swift | Global keyboard shortcuts (Carbon Events) |
 | LoginItemManager.swift | Launch at login (SMAppService) |
+| DisplayBrightnessManager.swift | XDR brightness boost via Metal EDR overlay |
+| MagnifierWindow.swift | Floating magnifier loupe following cursor |
 | generate_icon.swift | Programmatic app icon generator |
 | generate_dmg_bg.swift | DMG background image generator |
 | Makefile | Build, archive, DMG, zip, release |

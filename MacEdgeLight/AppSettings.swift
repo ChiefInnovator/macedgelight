@@ -18,6 +18,7 @@ class AppSettings: ObservableObject {
         static let desktopIconsHidden = "desktopIconsHidden"
         static let visibleInCapture = "visibleInCapture"
         static let borderWidth = "borderWidth"
+        static let magnifierEnabled = "magnifierEnabled"
     }
 
     @Published var brightness: Double {
@@ -69,14 +70,20 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(borderWidth, forKey: Keys.borderWidth) }
     }
 
+    @Published var magnifierEnabled: Bool {
+        didSet { defaults.set(magnifierEnabled, forKey: Keys.magnifierEnabled) }
+    }
+
     func resetToDefaults() {
         brightness = 1.0
         colorTemperature = 0.5
         isLightOn = true
         menuBarMode = 2
         cursorRevealEnabled = false
+        desktopIconsHidden = false
         visibleInCapture = false
         borderWidth = 60.0
+        magnifierEnabled = false
     }
 
     private init() {
@@ -94,6 +101,7 @@ class AppSettings: ObservableObject {
             Keys.desktopIconsHidden: false,
             Keys.visibleInCapture: false,
             Keys.borderWidth: 60.0,
+            Keys.magnifierEnabled: false,
         ])
 
         self.brightness = defaults.double(forKey: Keys.brightness)
@@ -116,5 +124,6 @@ class AppSettings: ObservableObject {
         self.desktopIconsHidden = defaults.bool(forKey: Keys.desktopIconsHidden)
         self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)
         self.borderWidth = defaults.double(forKey: Keys.borderWidth)
+        self.magnifierEnabled = defaults.bool(forKey: Keys.magnifierEnabled)
     }
 }

@@ -57,6 +57,18 @@ class EdgeLightView: NSView {
 
     override var isFlipped: Bool { false }
 
+    /// Snap all displayed values to their targets without animating.
+    /// Call once on initial setup to avoid a visible flash.
+    func snapToCurrentValues() {
+        displayedBrightness = isLightOn ? brightness : 0.0
+        displayedColorTemperature = colorTemperature
+        displayedTopInset = topInset
+        displayedFrameThickness = frameThickness
+        animationTimer?.invalidate()
+        animationTimer = nil
+        needsDisplay = true
+    }
+
     // MARK: - Animation
 
     private func startAnimationIfNeeded() {

@@ -42,6 +42,7 @@ class StatusBarController {
         menuBarModeItem = mbItem
         menu.addItem(mbItem)
         menu.addItem(NSMenuItem(title: "Cursor Reveal", action: #selector(toggleCursorReveal), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Magnifier", action: #selector(toggleMagnifier), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
@@ -147,6 +148,10 @@ class StatusBarController {
 
     @objc private func toggleCursorReveal() {
         edgeLightManager?.toggleCursorReveal()
+    }
+
+    @objc private func toggleMagnifier() {
+        edgeLightManager?.toggleMagnifier()
     }
 
     @objc private func toggleScreenCapture() {

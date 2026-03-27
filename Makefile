@@ -21,7 +21,7 @@ all: build
 
 # Debug build
 build:
-	xcodebuild -scheme $(SCHEME) -configuration Debug build
+	xcodebuild -scheme $(SCHEME) -configuration Debug build SYMROOT=$(CURDIR)/$(BUILD_DIR)
 
 # Release archive
 archive:

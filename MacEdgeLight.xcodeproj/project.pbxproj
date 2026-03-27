@@ -18,6 +18,8 @@
 		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA100009; };
 		AA000010 /* EdgeLightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100010; };
 		AA000011 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100011; };
+		AA000012 /* MagnifierWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100012; };
+		AA000013 /* DisplayBrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100013; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +34,8 @@
 		AA100009 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA100010 /* EdgeLightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EdgeLightManager.swift; sourceTree = "<group>"; };
 		AA100011 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
+		AA100012 /* MagnifierWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagnifierWindow.swift; sourceTree = "<group>"; };
+		AA100013 /* DisplayBrightnessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayBrightnessManager.swift; sourceTree = "<group>"; };
 		AA100020 /* MacEdgeLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacEdgeLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA100030 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA100031 /* MacEdgeLight.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacEdgeLight.entitlements; sourceTree = "<group>"; };
@@ -69,6 +73,8 @@
 				AA100007 /* HotkeyManager.swift */,
 				AA100008 /* MonitorManager.swift */,
 				AA100011 /* LoginItemManager.swift */,
+				AA100012 /* MagnifierWindow.swift */,
+				AA100013 /* DisplayBrightnessManager.swift */,
 				AA100009 /* Assets.xcassets */,
 				AA100030 /* Info.plist */,
 				AA100031 /* MacEdgeLight.entitlements */,
@@ -158,6 +164,8 @@
 				AA000008 /* MonitorManager.swift in Sources */,
 				AA000010 /* EdgeLightManager.swift in Sources */,
 				AA000011 /* LoginItemManager.swift in Sources */,
+				AA000012 /* MagnifierWindow.swift in Sources */,
+				AA000013 /* DisplayBrightnessManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

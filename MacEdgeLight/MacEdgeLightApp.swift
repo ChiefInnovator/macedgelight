@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        DisplayBrightnessManager.shared.restore()
         edgeLightManager?.stop()
     }
 

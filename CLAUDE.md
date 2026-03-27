@@ -23,6 +23,8 @@ Or open `MacEdgeLight.xcodeproj` in Xcode. No sandbox entitlements (needed for o
 - **StatusBarController** — Menu bar icon and dropdown menu
 - **HotkeyManager** — Global keyboard shortcuts (Cmd+Shift+L/Up/Down)
 - **LoginItemManager** — Launch-at-login via SMAppService
+- **DisplayBrightnessManager** — XDR brightness boost via Metal EDR overlay with multiply compositing
+- **MagnifierWindow** — Floating magnifier loupe following cursor
 
 ## Key conventions
 
@@ -31,5 +33,7 @@ Or open `MacEdgeLight.xcodeproj` in Xcode. No sandbox entitlements (needed for o
 - Settings changes flow: AppSettings -> EdgeLightManager -> MonitorManager -> applySettingsToAll() -> EdgeLightOverlayWindow.applySettings()
 - Visual transitions are animated via per-frame lerp in EdgeLightView.animationTick()
 - Menu bar mode is tri-state (0=below, 1=extend, 2=auto). Auto mode tracks cursor at 30fps and animates topInset.
+- Control panel buttons are split into light-dependent (dimmed when off) and always-active groups, separated by a vertical divider
+- EdgeLightView.snapToCurrentValues() is called on startup to avoid a visible flash when saved state is "off"
 - License: PolyForm Strict 1.0.0 (noncommercial use, no redistribution or modification)
 - Full technical spec in docs/SPEC.md

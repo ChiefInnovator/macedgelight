@@ -42,6 +42,7 @@ class MonitorManager {
     private func createOverlay(for screen: NSScreen) -> EdgeLightOverlayWindow {
         let window = EdgeLightOverlayWindow(for: screen)
         window.applySettings(settings)
+        window.edgeLightView.snapToCurrentValues()
         return window
     }
 
