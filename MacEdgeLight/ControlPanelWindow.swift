@@ -58,6 +58,11 @@ class ControlPanelWindow: NSPanel {
 
     override var canBecomeKey: Bool { true }
 
+    override func mouseDown(with event: NSEvent) {
+        // Allow dragging the panel from any non-button area (e.g., gaps between buttons)
+        performDrag(with: event)
+    }
+
     private func setupUI() {
         let container = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 100, height: 52))
         container.material = .dark
@@ -72,7 +77,7 @@ class ControlPanelWindow: NSPanel {
         let stackView = NSStackView()
         stackView.orientation = .horizontal
         stackView.spacing = 4
-        stackView.edgeInsets = NSEdgeInsets(top: 2, left: 8, bottom: 2, right: 8)
+        stackView.edgeInsets = NSEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
 
