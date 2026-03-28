@@ -13,6 +13,18 @@ private class DoubleClickButton: NSButton {
     }
 }
 
+private class DraggableVisualEffectView: NSVisualEffectView {
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
+    }
+}
+
+private class DraggableStackView: NSStackView {
+    override func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
+    }
+}
+
 class ControlPanelWindow: NSPanel {
     private weak var edgeLightManager: EdgeLightManager?
     private var hideTimer: Timer?
@@ -58,13 +70,8 @@ class ControlPanelWindow: NSPanel {
 
     override var canBecomeKey: Bool { true }
 
-    override func mouseDown(with event: NSEvent) {
-        // Allow dragging the panel from any non-button area (e.g., gaps between buttons)
-        performDrag(with: event)
-    }
-
     private func setupUI() {
-        let container = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 100, height: 52))
+        let container = DraggableVisualEffectView(frame: NSRect(x: 0, y: 0, width: 100, height: 52))
         container.material = .dark
         container.state = .active
         container.blendingMode = .behindWindow
@@ -74,7 +81,7 @@ class ControlPanelWindow: NSPanel {
         container.layer?.backgroundColor = NSColor(white: 0.1, alpha: 0.95).cgColor
         self.containerView = container
 
-        let stackView = NSStackView()
+        let stackView = DraggableStackView()
         stackView.orientation = .horizontal
         stackView.spacing = 4
         stackView.edgeInsets = NSEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
