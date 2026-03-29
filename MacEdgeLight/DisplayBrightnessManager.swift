@@ -16,7 +16,7 @@ class DisplayBrightnessManager {
     private var overlayWindows: [NSWindow] = []
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
-    private var renderTimer: Timer?
+    private var screenObserver: NSObjectProtocol?
     private var savedBrightness: [CGDirectDisplayID: Float] = [:]
 
     // DisplayServices function pointers
@@ -69,8 +69,10 @@ class DisplayBrightnessManager {
 
     private func deactivate() {
         isChanging = true
-        renderTimer?.invalidate()
-        renderTimer = nil
+        if let obs = screenObserver {
+            NotificationCenter.default.removeObserver(obs)
+            screenObserver = nil
+        }
         for window in overlayWindows {
             window.orderOut(nil)
         }
@@ -170,24 +172,22 @@ class DisplayBrightnessManager {
             overlayWindows.append(window)
         }
 
-        // Continuously re-render and re-apply the compositing filter to prevent
-        // the window server from caching stale composited content
-        renderTimer = Timer(timeInterval: 1.0 / 15.0, repeats: true) { [weak self] _ in
-            self?.refreshOverlays()
+        // Re-create overlays when screen configuration changes (e.g. display
+        // plugged in/out, resolution change) so geometry and EDR values stay correct.
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.rebuildOverlays()
         }
-        RunLoop.current.add(renderTimer!, forMode: .common)
     }
 
-    private func refreshOverlays() {
-        guard let queue = commandQueue else { return }
+    private func rebuildOverlays() {
         for window in overlayWindows {
-            guard let rootLayer = window.contentView?.layer,
-                  let metalLayer = rootLayer.sublayers?.first as? CAMetalLayer,
-                  let screen = window.screen else { continue }
-            rootLayer.compositingFilter = "multiplyBlendMode"
-            let brightness = min(Double(screen.maximumPotentialExtendedDynamicRangeColorComponentValue), 2.0)
-            renderFrame(metalLayer: metalLayer, brightness: brightness, queue: queue)
+            window.orderOut(nil)
         }
+        overlayWindows.removeAll()
+        createOverlays()
     }
 
     private func renderFrame(metalLayer: CAMetalLayer, brightness: Double, queue: MTLCommandQueue) {
@@ -205,9 +205,8 @@ class DisplayBrightnessManager {
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return }
         encoder.endEncoding()
 
+        commandBuffer.present(drawable)
         commandBuffer.commit()
-        commandBuffer.waitUntilScheduled()
-        drawable.present()
     }
 }
 
