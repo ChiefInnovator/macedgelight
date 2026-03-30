@@ -56,8 +56,14 @@ class StatusBarController {
             edrOffItem = offItem
             edrSubmenu.addItem(offItem)
             edrSubmenu.addItem(NSMenuItem.separator())
+            let defaultIntensity = 1.8
             for level in [1.25, 1.5, 1.75, 1.8, 1.9, 2.0] {
-                let title = String(format: "%.2fx", level)
+                let title: String
+                if level == defaultIntensity {
+                    title = String(format: "%.2fx (default)", level)
+                } else {
+                    title = String(format: "%.2fx", level)
+                }
                 let item = NSMenuItem(title: title, action: #selector(setEDRLevel(_:)), keyEquivalent: "")
                 item.target = self
                 item.tag = Int(level * 100)
@@ -199,7 +205,7 @@ class StatusBarController {
         updateEDRMenuStates()
     }
 
-    private func updateEDRMenuStates() {
+    func updateEDRMenuStates() {
         let isBoosted = DisplayBrightnessManager.shared.isBoosted
         let current = AppSettings.shared.edrIntensity
         edrOffItem?.state = isBoosted ? .off : .on

@@ -28,6 +28,11 @@ class EdgeLightManager {
         // Create overlay windows
         monitorManager.createOverlays()
 
+        // Restore EDR brightness boost state before UI is created
+        if settings.edrBoosted && DisplayBrightnessManager.shared.isAvailable {
+            DisplayBrightnessManager.shared.toggle()
+        }
+
         // Create control panel
         controlPanel = ControlPanelWindow(manager: self)
         if settings.showControlPanel {
@@ -147,6 +152,9 @@ class EdgeLightManager {
 
     func resetToDefaults() {
         let wasDesktopHidden = settings.desktopIconsHidden
+        if DisplayBrightnessManager.shared.isBoosted {
+            DisplayBrightnessManager.shared.toggle()
+        }
         settings.resetToDefaults()
         // Restore desktop icons if they were hidden
         if wasDesktopHidden {
@@ -207,13 +215,20 @@ class EdgeLightManager {
             mgr.updateIntensity()
         } else {
             mgr.toggle()
+            settings.edrBoosted = true
         }
-        controlPanel?.updateToggleStates()
+        updateEDRUI()
     }
 
     func toggleDisplayBrightness() {
         DisplayBrightnessManager.shared.toggle()
+        settings.edrBoosted = DisplayBrightnessManager.shared.isBoosted
+        updateEDRUI()
+    }
+
+    private func updateEDRUI() {
         controlPanel?.updateToggleStates()
+        statusBar?.updateEDRMenuStates()
     }
 
     // MARK: - Magnifier
