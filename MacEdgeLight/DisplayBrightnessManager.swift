@@ -14,9 +14,11 @@ class DisplayBrightnessManager {
     private(set) var isChanging = false
 
     private var overlayWindows: [NSWindow] = []
+    private var metalLayers: [(CAMetalLayer, Double)] = []  // (layer, brightness) for re-render
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
     private var screenObserver: NSObjectProtocol?
+    private var refreshTimer: Timer?
     private var savedBrightness: [CGDirectDisplayID: Float] = [:]
 
     // DisplayServices function pointers
@@ -69,6 +71,8 @@ class DisplayBrightnessManager {
 
     private func deactivate() {
         isChanging = true
+        refreshTimer?.invalidate()
+        refreshTimer = nil
         if let obs = screenObserver {
             NotificationCenter.default.removeObserver(obs)
             screenObserver = nil
@@ -77,6 +81,7 @@ class DisplayBrightnessManager {
             window.orderOut(nil)
         }
         overlayWindows.removeAll()
+        metalLayers.removeAll()
         restoreBrightness()
         isBoosted = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
@@ -116,6 +121,8 @@ class DisplayBrightnessManager {
     private func createOverlays() {
         guard let device = metalDevice, let queue = commandQueue else { return }
 
+        metalLayers.removeAll()
+
         for screen in NSScreen.screens {
             let maxEDR = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
             guard maxEDR > 1.0 else { continue }
@@ -153,6 +160,7 @@ class DisplayBrightnessManager {
             metalLayer.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearDisplayP3)
             metalLayer.wantsExtendedDynamicRangeContent = true
             metalLayer.isOpaque = false
+            metalLayer.presentsWithTransaction = true
             metalLayer.contentsScale = screen.backingScaleFactor
             metalLayer.actions = [
                 "contents": NSNull(),
@@ -168,9 +176,19 @@ class DisplayBrightnessManager {
 
             let brightness = min(Double(maxEDR), 2.0)
             renderFrame(metalLayer: metalLayer, brightness: brightness, queue: queue)
+            metalLayers.append((metalLayer, brightness))
             window.orderFront(nil)
             overlayWindows.append(window)
         }
+
+        // Periodically re-render to keep EDR headroom alive — macOS decays
+        // extended range if no new frames are presented to the Metal layer.
+        refreshTimer?.invalidate()
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.refreshAllLayers()
+        }
+        RunLoop.current.add(timer, forMode: .common)
+        refreshTimer = timer
 
         // Re-create overlays when screen configuration changes (e.g. display
         // plugged in/out, resolution change) so geometry and EDR values stay correct.
@@ -182,12 +200,31 @@ class DisplayBrightnessManager {
         }
     }
 
+    private var isRebuilding = false
+
     private func rebuildOverlays() {
+        guard !isChanging, !isRebuilding else { return }
+        isRebuilding = true
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+        // Remove old screen observer before createOverlays registers a new one
+        if let obs = screenObserver {
+            NotificationCenter.default.removeObserver(obs)
+            screenObserver = nil
+        }
         for window in overlayWindows {
             window.orderOut(nil)
         }
         overlayWindows.removeAll()
         createOverlays()
+        isRebuilding = false
+    }
+
+    private func refreshAllLayers() {
+        guard let queue = commandQueue else { return }
+        for (layer, brightness) in metalLayers {
+            renderFrame(metalLayer: layer, brightness: brightness, queue: queue)
+        }
     }
 
     private func renderFrame(metalLayer: CAMetalLayer, brightness: Double, queue: MTLCommandQueue) {
@@ -205,8 +242,9 @@ class DisplayBrightnessManager {
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return }
         encoder.endEncoding()
 
-        commandBuffer.present(drawable)
         commandBuffer.commit()
+        commandBuffer.waitUntilScheduled()
+        drawable.present()
     }
 }
 
