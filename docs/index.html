@@ -3,8 +3,74 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MacEdgeLight — Make Your Mac Glow</title>
-<meta name="description" content="A stunning ambient edge light that wraps your Mac screen in a customizable glow. For streaming, presentations, focus, and style.">
+<title>MacEdgeLight — Ambient Screen Glow for Mac | Streaming, Presentations & Focus</title>
+<meta name="description" content="Free macOS menu bar app that wraps your screen in a customizable ambient glow. Perfect for streamers, presenters, and developers. Native Swift, under 5 MB, no dependencies.">
+<meta name="keywords" content="MacEdgeLight, Mac screen glow, ambient light Mac, macOS edge light, streaming overlay Mac, screen border glow, XDR brightness boost, Mac presentation tool, OBS screen glow, Mac menu bar utility">
+<meta name="author" content="Richard Crane">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://chiefinnovator.github.io/macedgelight/">
+
+<!-- Geo / Language targeting -->
+<link rel="alternate" hreflang="en" href="https://chiefinnovator.github.io/macedgelight/">
+<link rel="alternate" hreflang="x-default" href="https://chiefinnovator.github.io/macedgelight/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MacEdgeLight">
+<meta property="og:title" content="MacEdgeLight — Ambient Screen Glow for Mac">
+<meta property="og:description" content="Free macOS utility that wraps your screen in a customizable ambient glow. For streaming, presentations, focus, and style.">
+<meta property="og:url" content="https://chiefinnovator.github.io/macedgelight/">
+<meta property="og:image" content="https://chiefinnovator.github.io/macedgelight/images/macedgelight-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MacEdgeLight glowing on a Mac desktop">
+<meta property="og:locale" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MacEdgeLight — Ambient Screen Glow for Mac">
+<meta name="twitter:description" content="Free macOS utility that wraps your screen in a customizable ambient glow. For streaming, presentations, focus, and style.">
+<meta name="twitter:image" content="https://chiefinnovator.github.io/macedgelight/images/macedgelight-og.png">
+<meta name="twitter:image:alt" content="MacEdgeLight glowing on a Mac desktop">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MacEdgeLight",
+  "description": "A macOS menu bar utility that renders an ambient glowing border around the screen. Perfect for streamers, presenters, and developers.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "macOS 13 Ventura or later",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Richard Crane"
+  },
+  "softwareRequirements": "macOS 13 Ventura or later",
+  "processorRequirements": "Apple Silicon or Intel",
+  "fileSize": "5MB",
+  "url": "https://chiefinnovator.github.io/macedgelight/",
+  "downloadUrl": "https://github.com/ChiefInnovator/macedgelight/releases",
+  "screenshot": "https://chiefinnovator.github.io/macedgelight/images/macedgelight-multi-monitor.webp",
+  "featureList": [
+    "Adjustable glow brightness and color temperature",
+    "Bloom mode for cinematic outer glow",
+    "Cursor spotlight for presentations",
+    "Screen capture toggle for OBS and recordings",
+    "XDR brightness boost for HDR displays",
+    "Auto menu bar hide/show",
+    "Global keyboard shortcuts",
+    "Floating magnifier loupe",
+    "Multi-monitor support",
+    "Hide desktop icons"
+  ]
+}
+</script>
 <style>
   :root {
     --glow-blue: #4fc3f7;
@@ -351,16 +417,19 @@
 </head>
 <body>
 
-<div class="container">
-  <nav>
-    <a href="#" class="logo">
-      <div class="logo-icon"></div>
-      MacEdgeLight
-    </a>
-    <a href="https://github.com/ChiefInnovator/macedgelight" class="github-link">GitHub</a>
-  </nav>
-</div>
+<header>
+  <div class="container">
+    <nav aria-label="Main navigation">
+      <a href="#" class="logo">
+        <div class="logo-icon" aria-hidden="true"></div>
+        MacEdgeLight
+      </a>
+      <a href="https://github.com/ChiefInnovator/macedgelight" class="github-link">GitHub</a>
+    </nav>
+  </div>
+</header>
 
+<main>
 <section class="hero">
   <div class="container">
     <span class="badge">Free &middot; Native &middot; Lightweight</span>
@@ -377,7 +446,7 @@
       </a>
     </div>
     <div class="hero-image">
-      <img src="images/macedgelight-multi-monitor.webp" alt="MacEdgeLight glowing on a multi-monitor setup" loading="lazy">
+      <img src="images/macedgelight-multi-monitor.webp" alt="MacEdgeLight ambient screen glow running on a multi-monitor Mac setup" width="720" height="450" loading="eager">
     </div>
   </div>
 </section>
@@ -385,7 +454,7 @@
 <section class="use-cases">
   <div class="container">
     <div class="section-label">Who it's for</div>
-    <h2 class="section-title">Built for creators, presenters, and power users</h2>
+    <h2 class="section-title">Built for streamers, presenters, and power users</h2>
     <div class="cards">
       <div class="card">
         <span class="card-icon" role="img" aria-label="streaming">&#127909;</span>
@@ -506,6 +575,8 @@
     </a>
   </div>
 </section>
+
+</main>
 
 <footer>
   <div class="container">
