@@ -14,6 +14,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         DisplayBrightnessManager.shared.restore()
+        if AppSettings.shared.desktopIconsHidden {
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+            task.arguments = ["write", "com.apple.finder", "CreateDesktop", "-bool", "true"]
+            try? task.run()
+            task.waitUntilExit()
+            let killall = Process()
+            killall.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+            killall.arguments = ["Finder"]
+            try? killall.run()
+            AppSettings.shared.desktopIconsHidden = false
+        }
         edgeLightManager?.stop()
     }
 

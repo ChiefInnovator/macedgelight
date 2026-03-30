@@ -45,6 +45,9 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Magnifier", action: #selector(toggleMagnifier), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
+        if DisplayBrightnessManager.shared.isAvailable {
+            menu.addItem(NSMenuItem(title: "Display Brightness Boost", action: #selector(toggleDisplayBrightness), keyEquivalent: ""))
+        }
         menu.addItem(NSMenuItem.separator())
 
         let toggleControls = NSMenuItem(title: "Hide Controls", action: #selector(toggleControls), keyEquivalent: "")
@@ -160,6 +163,10 @@ class StatusBarController {
 
     @objc private func toggleDesktopIcons() {
         edgeLightManager?.toggleDesktopIcons()
+    }
+
+    @objc private func toggleDisplayBrightness() {
+        edgeLightManager?.toggleDisplayBrightness()
     }
 
     @objc private func toggleControls() {

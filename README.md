@@ -1,7 +1,7 @@
 # MacEdgeLight
 
 <table><tr>
-<td valign="top"><b>Make your Mac glow.</b> A stunning ambient edge light that wraps your entire screen in a smooth, customizable glow — perfect for streaming, presentations, focus sessions, or just making your desktop look incredible.<br><br>Inspired by <a href="https://github.com/shanselman/EdgeLight">Windows Edge Light</a> by Scott Hanselman. Built natively for macOS.</td>
+<td valign="top"><b>Make your Mac glow.</b> A stunning ambient edge light that wraps your entire screen in a smooth, customizable glow — perfect for streaming, video calls, presentations, focus sessions, or just making your desktop look incredible.<br><br>Inspired by <a href="https://github.com/shanselman/EdgeLight">Windows Edge Light</a> by Scott Hanselman. Built natively for macOS.</td>
 <td><img src="docs/images/macedgelight-multi-monitor.webp" alt="MacEdgeLight running on MacBook Pro and external TV" width="300"></td>
 </tr></table>
 
@@ -9,8 +9,10 @@
 
 | Use Case | How It Helps |
 |---|---|
-| **Streaming & Content Creation** | Add a professional ambient glow to your setup. Toggle capture visibility so viewers see the effect — or keep it private. |
+| **Streaming & Podcasting** | Add a professional ambient glow to your setup. Toggle capture visibility so viewers see the effect — or keep it private. |
+| **Zoom, Teams & Video Calls** | Stand out on camera with a polished edge glow that frames your screen shares and makes demos pop during meetings. |
 | **Presentations & Demos** | Frame your screen with light to draw audience attention. Hide desktop icons for a clean look. Cursor reveal spotlights where you're pointing. |
+| **Low Vision & Accessibility** | XDR brightness boost pushes your display beyond its normal limits — one click makes everything easier to see. *(Requires XDR-capable display.)* |
 | **Late Night Coding** | Warm amber glow reduces eye strain. Adjustable brightness from whisper-quiet to blazing bloom. |
 | **Focus & Productivity** | The glow creates a visual boundary that keeps your eyes on screen. Auto-hiding controls stay out of your way. |
 | **Multi-Monitor Setups** | Light up one monitor or all of them. Cycle between displays instantly. |
@@ -39,6 +41,12 @@
 - Click-through — never interferes with your work
 - Hold any adjustment button for continuous fine-grained control
 
+### XDR Brightness Boost
+- Push your display into extended dynamic range for maximum brightness
+- One-click toggle from the control bar or status bar menu
+- Ideal for users with low vision or anyone working in bright environments
+- Requires a Mac with an XDR display (MacBook Pro with Liquid Retina XDR, Pro Display XDR)
+
 ### Bloom Mode
 - Push brightness past 100% for an additive white-hot bloom effect
 - Glow radius expands and intensifies at higher brightness levels
@@ -47,6 +55,10 @@
 ### Cursor Reveal
 - Toggle a feathered circular cutout that follows your cursor
 - See through the glow wherever your mouse goes — great for presentations
+
+### Magnifier
+- Floating magnifier loupe that follows your cursor
+- Useful for demos and presentations where fine detail matters
 
 ### Screen Capture Control
 - Hidden from screen capture by default (invisible in Zoom, Teams, or recordings)
@@ -61,6 +73,7 @@
 ### Desktop Icons
 - Show/hide all desktop icons with one click
 - Clean desktop for presentations, screencasts, or focus time
+- Automatically restored when the app quits
 
 ### Multi-Monitor
 - Show on a single monitor or all monitors simultaneously
@@ -69,6 +82,7 @@
 
 ### Auto-Hiding Controls
 - Floating HUD toolbar with quick access to everything
+- Drag grip on the right side for repositioning
 - Fades away after 3 seconds of inactivity — reappears instantly on hover
 - Background dynamically darkens when overlapping the glow
 
@@ -108,9 +122,12 @@ The floating toolbar provides quick access to all features:
 | Menu bar | Menu bar mode: Below → Extend → Auto | Cycles through 3 states |
 | Circle | Cursor reveal mode | Filled when on |
 | Video | Show in screen capture | Filled when on |
+| HDR | XDR brightness boost | Filled when on |
+| Magnifier | Floating magnifier loupe | Filled when on |
 | Eye | Hide desktop icons | Swaps to eye.slash |
 | Reset | Reset all settings to defaults | |
-| X | Quit | |
+| X | Hide controls | |
+| Grip | Drag to reposition the control bar | |
 
 ## Get Started
 
@@ -119,6 +136,7 @@ The floating toolbar provides quick access to all features:
 - macOS 13 Ventura or later
 - Retina and non-Retina displays supported
 - Wide-gamut (P3) color displays supported
+- XDR brightness boost requires an XDR-capable display
 
 ### Installation
 
@@ -153,6 +171,10 @@ The edge light is rendered in a fullscreen, click-through overlay window using C
 4. **Bloom mode** — When brightness exceeds 100%, the excess is rendered as additive light using `.plusLighter` blend mode. The glow radius expands proportionally — at 200% brightness, the bloom radius doubles.
 
 5. **Cursor cutout** — A radial gradient in `.destinationOut` blend mode punches a feathered circle through the glow at the cursor position.
+
+### XDR Brightness Boost
+
+The brightness boost uses a fullscreen Metal overlay with multiply compositing. A `CAMetalLayer` renders EDR white (2.0) in extended linear Display P3 color space, and the root layer composites via `multiplyBlendMode` — doubling all screen content into the XDR range. Hardware backlight is set to max via the private DisplayServices framework. A CVDisplayLink keeps the EDR headroom alive by continuously presenting frames.
 
 ### Animation System
 

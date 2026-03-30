@@ -6,6 +6,9 @@ import QuartzCore
 /// overlay with multiply compositing. The overlay renders EDR white (2.0) and
 /// composites via multiply blend, so all screen content is doubled in brightness
 /// into the XDR range. Hardware backlight is also set to max via DisplayServices.
+///
+/// The Metal layer must be re-rendered periodically — macOS dynamically manages
+/// EDR headroom and decays extended range if no new frames are presented.
 class DisplayBrightnessManager {
     static let shared = DisplayBrightnessManager()
 
@@ -14,11 +17,12 @@ class DisplayBrightnessManager {
     private(set) var isChanging = false
 
     private var overlayWindows: [NSWindow] = []
-    private var metalLayers: [(CAMetalLayer, Double)] = []  // (layer, brightness) for re-render
+    private var metalLayers: [(CAMetalLayer, Double)] = []
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
     private var screenObserver: NSObjectProtocol?
-    private var refreshTimer: Timer?
+    private var displayLink: CVDisplayLink?
+    private let renderLock = NSLock()
     private var savedBrightness: [CGDirectDisplayID: Float] = [:]
 
     // DisplayServices function pointers
@@ -65,14 +69,14 @@ class DisplayBrightnessManager {
         saveCurrentBrightness()
         setMaxBrightness()
         createOverlays()
+        startDisplayLink()
         isBoosted = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
     }
 
     private func deactivate() {
         isChanging = true
-        refreshTimer?.invalidate()
-        refreshTimer = nil
+        stopDisplayLink()
         if let obs = screenObserver {
             NotificationCenter.default.removeObserver(obs)
             screenObserver = nil
@@ -114,6 +118,30 @@ class DisplayBrightnessManager {
             _ = setter(displayID, brightness)
         }
         savedBrightness.removeAll()
+    }
+
+    // MARK: - Display link
+
+    private func startDisplayLink() {
+        stopDisplayLink()
+        var link: CVDisplayLink?
+        CVDisplayLinkCreateWithActiveCGDisplays(&link)
+        guard let link = link else { return }
+        let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        CVDisplayLinkSetOutputCallback(link, { (_, _, _, _, _, userInfo) -> CVReturn in
+            let mgr = Unmanaged<DisplayBrightnessManager>.fromOpaque(userInfo!).takeUnretainedValue()
+            mgr.renderAllLayers()
+            return kCVReturnSuccess
+        }, selfPtr)
+        CVDisplayLinkStart(link)
+        displayLink = link
+    }
+
+    private func stopDisplayLink() {
+        if let link = displayLink {
+            CVDisplayLinkStop(link)
+            displayLink = nil
+        }
     }
 
     // MARK: - EDR overlay
@@ -160,7 +188,6 @@ class DisplayBrightnessManager {
             metalLayer.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearDisplayP3)
             metalLayer.wantsExtendedDynamicRangeContent = true
             metalLayer.isOpaque = false
-            metalLayer.presentsWithTransaction = true
             metalLayer.contentsScale = screen.backingScaleFactor
             metalLayer.actions = [
                 "contents": NSNull(),
@@ -181,15 +208,6 @@ class DisplayBrightnessManager {
             overlayWindows.append(window)
         }
 
-        // Periodically re-render to keep EDR headroom alive — macOS decays
-        // extended range if no new frames are presented to the Metal layer.
-        refreshTimer?.invalidate()
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.refreshAllLayers()
-        }
-        RunLoop.current.add(timer, forMode: .common)
-        refreshTimer = timer
-
         // Re-create overlays when screen configuration changes (e.g. display
         // plugged in/out, resolution change) so geometry and EDR values stay correct.
         screenObserver = NotificationCenter.default.addObserver(
@@ -205,9 +223,7 @@ class DisplayBrightnessManager {
     private func rebuildOverlays() {
         guard !isChanging, !isRebuilding else { return }
         isRebuilding = true
-        refreshTimer?.invalidate()
-        refreshTimer = nil
-        // Remove old screen observer before createOverlays registers a new one
+        stopDisplayLink()
         if let obs = screenObserver {
             NotificationCenter.default.removeObserver(obs)
             screenObserver = nil
@@ -217,12 +233,16 @@ class DisplayBrightnessManager {
         }
         overlayWindows.removeAll()
         createOverlays()
+        startDisplayLink()
         isRebuilding = false
     }
 
-    private func refreshAllLayers() {
+    private func renderAllLayers() {
+        guard renderLock.try() else { return }  // Skip frame if previous render still in progress
+        defer { renderLock.unlock() }
         guard let queue = commandQueue else { return }
-        for (layer, brightness) in metalLayers {
+        let layers = metalLayers  // Snapshot to avoid mutation during iteration
+        for (layer, brightness) in layers {
             renderFrame(metalLayer: layer, brightness: brightness, queue: queue)
         }
     }
@@ -242,9 +262,8 @@ class DisplayBrightnessManager {
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return }
         encoder.endEncoding()
 
+        commandBuffer.present(drawable)
         commandBuffer.commit()
-        commandBuffer.waitUntilScheduled()
-        drawable.present()
     }
 }
 

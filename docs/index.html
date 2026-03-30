@@ -8,6 +8,8 @@
 <meta name="keywords" content="MacEdgeLight, Mac screen glow, ambient light Mac, macOS edge light, streaming overlay Mac, screen border glow, XDR brightness boost, Mac presentation tool, OBS screen glow, Mac menu bar utility">
 <meta name="author" content="Richard Crane">
 <meta name="robots" content="index, follow">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="canonical" href="https://chiefinnovator.github.io/macedgelight/">
 
 <!-- Geo / Language targeting -->
@@ -134,9 +136,12 @@
   .logo-icon {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    background: linear-gradient(135deg, var(--glow-blue), var(--glow-warm));
-    box-shadow: 0 0 16px rgba(79, 195, 247, 0.4);
+  }
+
+  .logo-icon img {
+    width: 100%;
+    height: 100%;
+    display: block;
   }
 
   nav a.github-link {
@@ -244,7 +249,9 @@
 
   .hero-image img {
     width: 100%;
+    height: auto;
     display: block;
+    object-fit: contain;
   }
 
   /* Use cases */
@@ -421,10 +428,10 @@
   <div class="container">
     <nav aria-label="Main navigation">
       <a href="#" class="logo">
-        <div class="logo-icon" aria-hidden="true"></div>
+        <div class="logo-icon"><img src="images/app-icon.png" alt="MacEdgeLight icon"></div>
         MacEdgeLight
       </a>
-      <a href="https://github.com/ChiefInnovator/macedgelight" class="github-link">GitHub</a>
+      <a href="https://github.com/ChiefInnovator/macedgelight/releases" class="github-link">Download MacEdgeLight</a>
     </nav>
   </div>
 </header>
@@ -438,15 +445,11 @@
     <div class="cta-group">
       <a href="https://github.com/ChiefInnovator/macedgelight/releases" class="btn btn-primary">
         <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></svg>
-        Download
-      </a>
-      <a href="https://github.com/ChiefInnovator/macedgelight" class="btn btn-secondary">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        View Source
+        Download MacEdgeLight
       </a>
     </div>
     <div class="hero-image">
-      <img src="images/macedgelight-multi-monitor.webp" alt="MacEdgeLight ambient screen glow running on a multi-monitor Mac setup" width="720" height="450" loading="eager">
+      <img src="images/macedgelight-multi-monitor.webp" alt="MacEdgeLight ambient screen glow running on a multi-monitor Mac setup" loading="eager">
     </div>
   </div>
 </section>
@@ -454,12 +457,17 @@
 <section class="use-cases">
   <div class="container">
     <div class="section-label">Who it's for</div>
-    <h2 class="section-title">Built for streamers, presenters, and power users</h2>
+    <h2 class="section-title">Built for streamers, presenters, and everyone on camera</h2>
     <div class="cards">
       <div class="card">
         <span class="card-icon" role="img" aria-label="streaming">&#127909;</span>
-        <h3>Streamers</h3>
-        <p>Add a professional ambient glow to your stream. Show it on camera or hide it from capture &mdash; your choice.</p>
+        <h3>Streamers &amp; Podcasters</h3>
+        <p>Add a professional ambient glow to your stream or recording. Show it on camera or hide it from capture &mdash; your choice.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon" role="img" aria-label="video calls">&#128247;</span>
+        <h3>Zoom, Teams &amp; Video Calls</h3>
+        <p>Stand out on camera with a polished edge glow that frames your screen shares and makes demos pop during meetings.</p>
       </div>
       <div class="card">
         <span class="card-icon" role="img" aria-label="presentation">&#127916;</span>
@@ -470,6 +478,11 @@
         <span class="card-icon" role="img" aria-label="developer">&#128187;</span>
         <h3>Developers</h3>
         <p>Late-night coding meets warm ambient light. Reduce eye strain and make your desktop look incredible.</p>
+      </div>
+      <div class="card">
+        <span class="card-icon" role="img" aria-label="accessibility">&#128065;</span>
+        <h3>Low Vision &amp; Accessibility</h3>
+        <p>XDR brightness boost pushes your display beyond its normal limits. If standard brightness isn't enough, one click makes everything easier to see. <em>Requires a Mac with an XDR display (MacBook Pro, Pro Display XDR).</em></p>
       </div>
       <div class="card">
         <span class="card-icon" role="img" aria-label="multiple monitors">&#128421;</span>
@@ -580,7 +593,7 @@
 
 <footer>
   <div class="container">
-    <p>MacEdgeLight &copy; 2026 Richard Crane &middot; <a href="https://github.com/ChiefInnovator/macedgelight">GitHub</a></p>
+    <p>MacEdgeLight &copy; 2026 Richard Crane &middot; Inventing Fire with AI</p>
   </div>
 </footer>
 

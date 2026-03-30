@@ -13,15 +13,40 @@ private class DoubleClickButton: NSButton {
     }
 }
 
-private class DraggableVisualEffectView: NSVisualEffectView {
+private class DraggableVisualEffectView: NSVisualEffectView {}
+
+private class DraggableStackView: NSStackView {}
+
+private class DragGripView: NSView {
+    override func draw(_ dirtyRect: NSRect) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        ctx.setFillColor(NSColor(white: 1.0, alpha: 0.35).cgColor)
+        let dotSize: CGFloat = 2.5
+        let cols = 2
+        let spacingX: CGFloat = 5
+        let spacingY: CGFloat = 4.5
+        let inset: CGFloat = 6
+        let availableHeight = bounds.height - inset * 2
+        let rows = max(2, Int(availableHeight / spacingY) + 1)
+        let totalW = CGFloat(cols - 1) * spacingX + dotSize
+        let totalH = CGFloat(rows - 1) * spacingY + dotSize
+        let startX = bounds.midX - totalW / 2
+        let startY = bounds.midY - totalH / 2
+        for row in 0..<rows {
+            for col in 0..<cols {
+                let x = startX + CGFloat(col) * spacingX
+                let y = startY + CGFloat(row) * spacingY
+                ctx.fillEllipse(in: CGRect(x: x, y: y, width: dotSize, height: dotSize))
+            }
+        }
+    }
+
     override func mouseDown(with event: NSEvent) {
         window?.performDrag(with: event)
     }
-}
 
-private class DraggableStackView: NSStackView {
-    override func mouseDown(with event: NSEvent) {
-        window?.performDrag(with: event)
+    override func resetCursorRects() {
+        addCursorRect(bounds, cursor: .openHand)
     }
 }
 
@@ -55,7 +80,7 @@ class ControlPanelWindow: NSPanel {
         self.collectionBehavior = [.canJoinAllSpaces, .stationary]
         self.isReleasedWhenClosed = false
         self.hidesOnDeactivate = false
-        self.isMovableByWindowBackground = true
+        self.isMovableByWindowBackground = false
         self.acceptsMouseMovedEvents = true
 
         setupUI()
@@ -163,6 +188,14 @@ class ControlPanelWindow: NSPanel {
 
             stackView.addArrangedSubview(button)
         }
+
+        // Drag grip on the right side
+        let grip = DragGripView()
+        grip.translatesAutoresizingMaskIntoConstraints = false
+        grip.toolTip = "Drag to move"
+        stackView.addArrangedSubview(grip)
+        allConstraints.append(grip.widthAnchor.constraint(equalToConstant: 16))
+        allConstraints.append(grip.heightAnchor.constraint(equalToConstant: 44))
 
         container.addSubview(stackView)
 
