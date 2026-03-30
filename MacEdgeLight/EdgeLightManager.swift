@@ -200,6 +200,17 @@ class EdgeLightManager {
 
     // MARK: - Display Brightness Boost
 
+    func setEDRIntensity(_ intensity: Double) {
+        let mgr = DisplayBrightnessManager.shared
+        settings.edrIntensity = intensity
+        if mgr.isBoosted {
+            mgr.updateIntensity()
+        } else {
+            mgr.toggle()
+        }
+        controlPanel?.updateToggleStates()
+    }
+
     func toggleDisplayBrightness() {
         DisplayBrightnessManager.shared.toggle()
         controlPanel?.updateToggleStates()

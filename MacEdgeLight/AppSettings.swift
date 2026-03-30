@@ -19,6 +19,7 @@ class AppSettings: ObservableObject {
         static let visibleInCapture = "visibleInCapture"
         static let borderWidth = "borderWidth"
         static let magnifierEnabled = "magnifierEnabled"
+        static let edrIntensity = "edrIntensity"
     }
 
     @Published var brightness: Double {
@@ -74,6 +75,10 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(magnifierEnabled, forKey: Keys.magnifierEnabled) }
     }
 
+    @Published var edrIntensity: Double {
+        didSet { defaults.set(edrIntensity, forKey: Keys.edrIntensity) }
+    }
+
     func resetToDefaults() {
         brightness = 1.0
         colorTemperature = 0.5
@@ -102,6 +107,7 @@ class AppSettings: ObservableObject {
             Keys.visibleInCapture: false,
             Keys.borderWidth: 60.0,
             Keys.magnifierEnabled: false,
+            Keys.edrIntensity: 1.8,
         ])
 
         self.brightness = defaults.double(forKey: Keys.brightness)
@@ -125,5 +131,6 @@ class AppSettings: ObservableObject {
         self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)
         self.borderWidth = defaults.double(forKey: Keys.borderWidth)
         self.magnifierEnabled = defaults.bool(forKey: Keys.magnifierEnabled)
+        self.edrIntensity = defaults.double(forKey: Keys.edrIntensity)
     }
 }

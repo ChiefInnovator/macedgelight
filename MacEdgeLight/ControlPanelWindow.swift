@@ -60,6 +60,7 @@ class ControlPanelWindow: NSPanel {
     private weak var containerView: NSVisualEffectView?
     private var tooltipWindow: NSWindow?
     private var tooltipTimer: Timer?
+    private var edrSlider: NSSlider?
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
@@ -187,6 +188,32 @@ class ControlPanelWindow: NSPanel {
             }
 
             stackView.addArrangedSubview(button)
+
+            // Insert EDR intensity slider right after the boost toggle
+            if imageName == "sun.max.trianglebadge.exclamationmark" && DisplayBrightnessManager.shared.isAvailable {
+                let edrLevels: [Double] = [1.25, 1.5, 1.75, 1.8, 1.9, 2.0]
+                let currentIdx = edrLevels.enumerated().min(by: {
+                    abs($0.element - AppSettings.shared.edrIntensity) < abs($1.element - AppSettings.shared.edrIntensity)
+                })?.offset ?? 0
+                let slider = NSSlider(value: Double(currentIdx),
+                                      minValue: 0, maxValue: Double(edrLevels.count - 1),
+                                      target: self, action: #selector(edrSliderChanged(_:)))
+                slider.numberOfTickMarks = edrLevels.count
+                slider.allowsTickMarkValuesOnly = true
+                slider.isContinuous = true
+                slider.toolTip = String(format: "EDR Intensity: %.2fx", AppSettings.shared.edrIntensity)
+                slider.translatesAutoresizingMaskIntoConstraints = false
+                slider.addTrackingArea(NSTrackingArea(
+                    rect: slider.bounds,
+                    options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+                    owner: self,
+                    userInfo: ["button": slider]
+                ))
+                stackView.addArrangedSubview(slider)
+                allConstraints.append(slider.widthAnchor.constraint(equalToConstant: 60))
+                allConstraints.append(slider.heightAnchor.constraint(equalToConstant: 44))
+                edrSlider = slider
+            }
         }
 
         // Drag grip on the right side
@@ -329,6 +356,15 @@ class ControlPanelWindow: NSPanel {
             ? "Show Desktop Icons" : "Hide Desktop Icons"
         setToggle("sun.max.trianglebadge.exclamationmark", active: DisplayBrightnessManager.shared.isBoosted,
                   onIcon: "sun.max.fill", offIcon: "sun.max")
+        if let slider = edrSlider {
+            let boosted = DisplayBrightnessManager.shared.isBoosted
+            let idx = edrLevels.enumerated().min(by: {
+                abs($0.element - settings.edrIntensity) < abs($1.element - settings.edrIntensity)
+            })?.offset ?? 0
+            slider.doubleValue = Double(idx)
+            slider.isEnabled = boosted
+            slider.toolTip = String(format: "EDR Intensity: %.2fx", settings.edrIntensity)
+        }
 
         // Disable controls that don't apply when the light is off
         let dimColor = NSColor(white: 1.0, alpha: 0.4)
@@ -456,6 +492,15 @@ class ControlPanelWindow: NSPanel {
 
     @objc private func toggleDisplayBrightness() {
         edgeLightManager?.toggleDisplayBrightness()
+    }
+
+    private let edrLevels: [Double] = [1.25, 1.5, 1.75, 1.8, 1.9, 2.0]
+
+    @objc private func edrSliderChanged(_ sender: NSSlider) {
+        let idx = Int(sender.doubleValue.rounded())
+        let level = edrLevels[idx]
+        edgeLightManager?.setEDRIntensity(level)
+        sender.toolTip = String(format: "EDR Intensity: %.2fx", level)
     }
 
     @objc private func toggleLaunchAtLogin() {

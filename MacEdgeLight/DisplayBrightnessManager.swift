@@ -62,6 +62,11 @@ class DisplayBrightnessManager {
         if isBoosted { deactivate() }
     }
 
+    func updateIntensity() {
+        guard isBoosted else { return }
+        rebuildOverlays()
+    }
+
     // MARK: - Activate / Deactivate
 
     private func activate() {
@@ -201,7 +206,7 @@ class DisplayBrightnessManager {
             )
             rootLayer.addSublayer(metalLayer)
 
-            let brightness = min(Double(maxEDR), 2.0)
+            let brightness = min(AppSettings.shared.edrIntensity, Double(maxEDR))
             renderFrame(metalLayer: metalLayer, brightness: brightness, queue: queue)
             metalLayers.append((metalLayer, brightness))
             window.orderFront(nil)
