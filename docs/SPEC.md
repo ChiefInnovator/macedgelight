@@ -1,6 +1,6 @@
 # MacEdgeLight — Technical Specification
 
-Version 1.0 | March 2026 | Richard Crane
+Version 1.8 | April 2026 | Richard Crane
 
 ## Overview
 
@@ -25,7 +25,8 @@ MacEdgeLightApp (entry point)
 │   ├── HotkeyManager (global keyboard shortcuts)
 │   ├── LoginItemManager (launch at login via SMAppService)
 │   ├── DisplayBrightnessManager (XDR brightness boost)
-│   └── MagnifierWindow (cursor magnifier loupe)
+│   ├── MagnifierWindow (cursor magnifier loupe)
+│   └── EDRInfoWindow (debug-only EDR diagnostics panel)
 ```
 
 ### Data Flow
@@ -60,6 +61,7 @@ User input (button / hotkey / menu)
 | visibleInCapture | Bool | false | — | Yes |
 | borderWidth | Double | 60.0 | 10 – 150 | Yes |
 | magnifierEnabled | Bool | false | — | Yes |
+| edrBoosted | Bool | false | — | Yes |
 
 ### Menu Bar Modes
 
@@ -150,7 +152,8 @@ This gives smooth ease-out behavior, settling to within 0.2% in ~25 frames (~0.4
 
 | Window | Level | Type | Click-through |
 |---|---|---|---|
-| XDR brightness overlay | mainMenu - 2 | NSWindow | Yes (ignoresMouseEvents) |
+| XDR brightness overlay | screenSaver - 1 | NSWindow | Yes (ignoresMouseEvents) |
+| EDR diagnostics | mainMenu + 3 | NSPanel | No (debug only) |
 | EdgeLightOverlayWindow | mainMenu ± 1 | NSWindow | Yes (ignoresMouseEvents) |
 | ControlPanelWindow | mainMenu + 2 | NSPanel | No (interactive, canBecomeKey for tooltips) |
 | MagnifierWindow | mainMenu + 3 | NSPanel | Yes (ignoresMouseEvents) |
@@ -169,18 +172,61 @@ The control panel must be above the overlay to remain visible when the border is
 
 ## XDR Brightness Boost
 
-On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/Max+, Pro Display XDR), a toggle enables full XDR brightness using the same technique as Vivid:
+On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/Max+, Pro Display XDR), a toggle enables full XDR brightness using a dual technique:
+
+### Invisible Metal EDR Overlay
 
 1. A full-screen borderless overlay window with a `CAMetalLayer` sublayer
 2. The Metal layer uses `.rgba16Float` pixel format and `CGColorSpace.extendedLinearDisplayP3`
 3. `wantsExtendedDynamicRangeContent = true` signals the compositor to unlock XDR mode
-4. The view's root layer has `compositingFilter = "multiplyBlendMode"` for cross-window compositing
-5. The Metal layer renders a clear color with values > 1.0 (using `maximumExtendedDynamicRangeColorComponentValue`)
-6. A 1-second timer re-renders to keep EDR engaged
+4. The Metal layer renders EDR values with **alpha=0** — invisible to the user but signals macOS to grant extended headroom
+5. A `CVDisplayLink` re-renders every frame to prevent EDR headroom decay
+6. No compositing filter — the overlay does not visually affect screen content
 
-The overlay window sits at `mainMenu - 2` (below the edge light overlay). `DisplayBrightnessManager` is a singleton with `activate()`/`deactivate()` methods; brightness is restored on app quit via `applicationWillTerminate`.
+### Linear Gamma Scaling
+
+The display's gamma transfer table is saved and then scaled by `gammaScale` (1.45x):
+
+```swift
+boostedRed[i] = red[i] * gammaScale
+```
+
+This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. Targets 0.225 gamma deviation to match industry standard.
+
+### Hardware Brightness
+
+Hardware backlight is maximized via private `DisplayServicesSetBrightness` API. Original brightness is saved and restored on deactivation.
+
+### Constants
+
+| Constant | Value | Purpose |
+|---|---|---|
+| `maxHeadroomCap` | 16.0 | Maximum EDR headroom requested from macOS |
+| `gammaScale` | 1.45 | Linear gamma table multiplier (~0.225 deviation) |
+
+### Lifecycle
+
+The overlay window sits at `screenSaver - 1`. `DisplayBrightnessManager` is a singleton with `toggle()`/`restore()` methods. State is persisted via `AppSettings.edrBoosted` and restored on launch. Brightness, gamma, and overlays are all restored on app quit via `applicationWillTerminate`.
 
 Availability is checked via `NSScreen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0`.
+
+### Sleep/Wake Resilience
+
+Listens for `NSWorkspace.didWakeNotification` and rebuilds overlays after a 2-second delay to allow headroom values to stabilize.
+
+## EDR Diagnostics Window
+
+Debug-only floating panel (`EDRInfoWindow`) that appears when running under Xcode debugger (detected via `P_TRACED` process flag). Displays real-time per-screen EDR information updated every 0.5 seconds:
+
+- EDR boost status, hardware backlight level
+- Current/potential/reference headroom values
+- Applied multiply (our headroom cap) or n/a when off
+- Effective vs peak brightness percentage
+- Gamma deviation per channel (R/G/B) with own-vs-external attribution
+- External EDR activity detection (warns when another app is using EDR)
+- Active color space (named, ICC profile, or model fallback)
+
+Features a titlebar copy button (SF Symbol `doc.on.doc`) that copies a timestamped diagnostic snapshot to the clipboard.
 
 ## Control Panel
 
@@ -296,8 +342,9 @@ Notarization credentials stored in keychain as `MacEdgeLightNotarize` profile.
 | StatusBarController.swift | Menu bar icon and dropdown menu |
 | HotkeyManager.swift | Global keyboard shortcuts (Carbon Events) |
 | LoginItemManager.swift | Launch at login (SMAppService) |
-| DisplayBrightnessManager.swift | XDR brightness boost via Metal EDR overlay |
+| DisplayBrightnessManager.swift | XDR brightness boost via invisible Metal EDR overlay + linear gamma scaling |
 | MagnifierWindow.swift | Floating magnifier loupe following cursor |
+| EDRInfoWindow.swift | Debug-only EDR diagnostics panel (visible when debugger attached) |
 | generate_icon.swift | Programmatic app icon generator |
 | generate_dmg_bg.swift | DMG background image generator |
 | Makefile | Build, archive, DMG, zip, release |

@@ -43,6 +43,9 @@
 
 ### XDR Brightness Boost
 - Push your display into extended dynamic range for maximum brightness
+- Dual technique: invisible Metal EDR overlay signals macOS to grant headroom, while linear gamma scaling pushes display values into the extended range — bright without washout
+- Dynamically adapts to display conditions (thermals, ambient light, battery state)
+- Hardware backlight maximized via DisplayServices for peak luminance
 - One-click toggle from the control bar or status bar menu
 - Ideal for users with low vision or anyone working in bright environments
 - Requires a Mac with an XDR display (MacBook Pro with Liquid Retina XDR, Pro Display XDR)
@@ -87,8 +90,8 @@
 - Background dynamically darkens when overlapping the glow
 
 ### Reset to Defaults
-- Double-click the lightbulb to reset all light settings
-- Reset button on the control bar or status bar menu
+- Double-click the lightbulb to reset ring light settings (brightness, color, border) while preserving EDR boost, magnifier, and desktop icon state
+- Full reset button on the control bar or status bar menu restores everything
 
 ### Lightweight
 - Pure Swift, native AppKit — no Electron, no web views
@@ -174,7 +177,15 @@ The edge light is rendered in a fullscreen, click-through overlay window using C
 
 ### XDR Brightness Boost
 
-The brightness boost uses a fullscreen Metal overlay with multiply compositing. A `CAMetalLayer` renders EDR white (2.0) in extended linear Display P3 color space, and the root layer composites via `multiplyBlendMode` — doubling all screen content into the XDR range. Hardware backlight is set to max via the private DisplayServices framework. A CVDisplayLink keeps the EDR headroom alive by continuously presenting frames.
+The brightness boost uses a dual technique for maximum brightness without washout:
+
+1. **Invisible Metal EDR overlay** — A full-screen `CAMetalLayer` renders EDR values with alpha=0 (invisible) in extended linear Display P3 color space. This signals macOS to grant extended dynamic range headroom without visually affecting screen content. A CVDisplayLink keeps the EDR headroom alive by continuously presenting frames.
+
+2. **Linear gamma scaling** — The display's gamma transfer table is scaled by 1.45x, pushing all pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and washes out), linear scaling preserves relative contrast — blacks stay black, everything else gets brighter.
+
+3. **Hardware backlight max** — Set to 100% via the private DisplayServices framework for peak panel luminance.
+
+The overlay dynamically adapts to the current headroom macOS grants (typically ~2.667x on XDR displays), which varies with thermals, ambient light, and battery state.
 
 ### Animation System
 

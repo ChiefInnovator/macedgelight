@@ -4,9 +4,9 @@
 
 **Tagline:** Make your Mac glow.
 
-**One-liner:** A stunning ambient edge light that wraps your screen in a customizable glow — for streaming, presentations, focus, and style.
+**One-liner:** A stunning ambient edge light that wraps your screen in a customizable glow with XDR brightness boost — for streaming, presentations, accessibility, and focus.
 
-**Elevator pitch:** MacEdgeLight adds a beautiful, adjustable glowing border around your Mac screen. Streamers use it to elevate their setup. Presenters use it to frame their demos. Developers use it for late-night eye comfort. It's lightweight, native, and free.
+**Elevator pitch:** MacEdgeLight adds a beautiful, adjustable glowing border around your Mac screen with XDR brightness boost that pushes HDR displays to peak luminance. Streamers use it to elevate their setup. Presenters use it to frame their demos. Low-vision users use it to see their screen clearly. Developers use it for late-night eye comfort. It's lightweight, native, and free.
 
 ## Target Audiences
 
@@ -31,7 +31,14 @@
 **Hook:** "Warm ambient glow that reduces eye strain and makes your desktop look incredible"
 **Key features:** Warm color temperature, adjustable brightness, keyboard shortcuts, lightweight menu bar app
 
-### 4. Multi-Monitor Professionals (Secondary)
+### 4. Low Vision & Accessibility Users (Primary)
+
+**Who:** Users with low vision, age-related macular degeneration, or anyone working in bright ambient environments
+**Pain point:** Screen not bright enough, difficulty seeing content clearly
+**Hook:** "One click to push your Mac display to maximum brightness — XDR brightness boost makes everything easier to see"
+**Key features:** XDR brightness boost with linear gamma scaling, dynamic headroom adaptation, hardware backlight max, works with Liquid Retina XDR and Pro Display XDR
+
+### 5. Multi-Monitor Professionals (Secondary)
 
 **Who:** Traders, editors, developers with 2+ screens
 **Pain point:** Visual separation between monitors, ambient lighting across a full setup
@@ -44,8 +51,9 @@
 |---|---|
 | Streamers | "Your viewers will notice. A professional ambient glow that shows up on camera — or stays hidden. Your choice." |
 | Presenters | "Frame your demo. Spotlight your cursor. Hide the clutter. Present like a pro." |
+| Low Vision | "One click to push your display to peak brightness. XDR boost makes everything easier to see." |
 | Developers | "Late night coding, meet warm ambient light. Your eyes will thank you." |
-| General | "The simplest way to make your Mac look stunning." |
+| General | "The simplest way to make your Mac look stunning — and brighter than ever." |
 
 ## Content Strategy
 
@@ -146,8 +154,9 @@
 | Physical ring lights | Hardware ($30-100+) | Desk clutter, power cables, fixed position, doesn't travel with laptop. |
 | Hue Sync / LIFX | Hardware | Requires physical LED strips. MacEdgeLight is software-only. |
 | f.lux | macOS | Color temperature only, no border glow effect. |
+| Vivid / BetterDisplay | macOS | XDR brightness only, no ambient glow, no presentation tools. Paid. |
 
-**MacEdgeLight's edge:** The only macOS ambient screen light with bloom mode, cursor reveal, auto menu bar, screen capture toggle, and smooth animations. Free. Native. Lightweight. Replaces physical ring lights for screen-focused use cases — no hardware, no cables, travels with your laptop.
+**MacEdgeLight's edge:** The only macOS ambient screen light with XDR brightness boost, bloom mode, cursor reveal, auto menu bar, screen capture toggle, and smooth animations. Free. Native. Lightweight. Combines ambient lighting with display brightness enhancement — no other tool does both. Replaces physical ring lights for screen-focused use cases — no hardware, no cables, travels with your laptop.
 
 ## Assets Needed
 

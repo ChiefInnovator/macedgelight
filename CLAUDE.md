@@ -23,8 +23,9 @@ Or open `MacEdgeLight.xcodeproj` in Xcode. No sandbox entitlements (needed for o
 - **StatusBarController** — Menu bar icon and dropdown menu
 - **HotkeyManager** — Global keyboard shortcuts (Cmd+Shift+L/Up/Down)
 - **LoginItemManager** — Launch-at-login via SMAppService
-- **DisplayBrightnessManager** — XDR brightness boost via Metal EDR overlay with multiply compositing
+- **DisplayBrightnessManager** — XDR brightness boost via invisible Metal EDR overlay (alpha=0, headroom signaling) + linear gamma table scaling (1.45x). Constants: `maxHeadroomCap`, `gammaScale`. Includes sleep/wake resilience via `didWakeNotification`.
 - **MagnifierWindow** — Floating magnifier loupe following cursor
+- **EDRInfoWindow** — Debug-only floating diagnostics panel (appears when debugger attached). Shows live EDR headroom, gamma deviation, color space, external EDR detection. Copy button in titlebar.
 
 ## Key conventions
 
