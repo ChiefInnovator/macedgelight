@@ -69,6 +69,10 @@ class EDRInfoWindow: NSPanel {
         self.titlebarAppearsTransparent = true
         self.titleVisibility = .visible
 
+        // Keep the close button always visible (not just on hover)
+        self.standardWindowButton(.closeButton)?.alphaValue = 1.0
+        self.standardWindowButton(.closeButton)?.needsDisplay = true
+
         let field = NSTextField(wrappingLabelWithString: "")
         field.font = NSFont.monospacedSystemFont(ofSize: 15, weight: .medium)
         field.textColor = .white
@@ -78,20 +82,9 @@ class EDRInfoWindow: NSPanel {
         field.translatesAutoresizingMaskIntoConstraints = false
         textField = field
 
-        let copyButton = NSButton(title: "  Copy to Clipboard  ", target: self, action: #selector(copyToClipboard))
-        copyButton.bezelStyle = .rounded
-        copyButton.isBordered = false
-        copyButton.wantsLayer = true
-        copyButton.layer?.backgroundColor = NSColor(white: 0.25, alpha: 1.0).cgColor
-        copyButton.layer?.cornerRadius = 6
-        copyButton.contentTintColor = .white
-        copyButton.font = NSFont.systemFont(ofSize: 13, weight: .medium)
-        copyButton.translatesAutoresizingMaskIntoConstraints = false
-
         let container = NSView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(field)
-        container.addSubview(copyButton)
 
         self.contentView = container
 
@@ -99,12 +92,22 @@ class EDRInfoWindow: NSPanel {
             field.topAnchor.constraint(equalTo: container.topAnchor, constant: 8),
             field.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             field.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-
-            copyButton.topAnchor.constraint(equalTo: field.bottomAnchor, constant: 12),
-            copyButton.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            copyButton.heightAnchor.constraint(equalToConstant: 30),
-            copyButton.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
+            field.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -8),
         ])
+
+        // Copy icon button in titlebar
+        let copyButton = NSButton(frame: NSRect(x: 0, y: 0, width: 28, height: 28))
+        copyButton.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: "Copy to Clipboard")
+        copyButton.bezelStyle = .rounded
+        copyButton.isBordered = false
+        copyButton.contentTintColor = .white
+        copyButton.target = self
+        copyButton.action = #selector(copyToClipboard)
+        copyButton.toolTip = "Copy to Clipboard"
+        let accessory = NSTitlebarAccessoryViewController()
+        accessory.view = copyButton
+        accessory.layoutAttribute = .trailing
+        self.addTitlebarAccessoryViewController(accessory)
     }
 
     func startUpdating() {

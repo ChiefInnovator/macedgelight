@@ -222,7 +222,6 @@ class EdgeLightManager {
         task.arguments = ["write", "com.apple.finder", "CreateDesktop", "-bool", hidden ? "false" : "true"]
         try? task.run()
         task.waitUntilExit()
-        // Restart Finder to apply the change
         let killall = Process()
         killall.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
         killall.arguments = ["Finder"]
