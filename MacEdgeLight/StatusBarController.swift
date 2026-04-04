@@ -6,8 +6,7 @@ class StatusBarController {
     private var toggleControlsItem: NSMenuItem?
     private var launchAtLoginItem: NSMenuItem?
     private var menuBarModeItem: NSMenuItem?
-    private var edrMenuItems: [Double: NSMenuItem] = [:]
-    private var edrOffItem: NSMenuItem?
+    private var edrToggleItem: NSMenuItem?
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
@@ -48,31 +47,10 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
         if DisplayBrightnessManager.shared.isAvailable {
-            let edrItem = NSMenuItem(title: "Display Brightness Boost", action: nil, keyEquivalent: "")
-            let edrSubmenu = NSMenu()
-            let offItem = NSMenuItem(title: "Off", action: #selector(edrOff), keyEquivalent: "")
-            offItem.target = self
-            offItem.state = DisplayBrightnessManager.shared.isBoosted ? .off : .on
-            edrOffItem = offItem
-            edrSubmenu.addItem(offItem)
-            edrSubmenu.addItem(NSMenuItem.separator())
-            let defaultIntensity = 1.8
-            for level in [1.25, 1.5, 1.75, 1.8, 1.9, 2.0] {
-                let title: String
-                if level == defaultIntensity {
-                    title = String(format: "%.2fx (default)", level)
-                } else {
-                    title = String(format: "%.2fx", level)
-                }
-                let item = NSMenuItem(title: title, action: #selector(setEDRLevel(_:)), keyEquivalent: "")
-                item.target = self
-                item.tag = Int(level * 100)
-                let isBoosted = DisplayBrightnessManager.shared.isBoosted
-                item.state = (isBoosted && AppSettings.shared.edrIntensity == level) ? .on : .off
-                edrMenuItems[level] = item
-                edrSubmenu.addItem(item)
-            }
-            edrItem.submenu = edrSubmenu
+            let edrItem = NSMenuItem(title: "Display Brightness Boost", action: #selector(toggleDisplayBrightness), keyEquivalent: "")
+            edrItem.target = self
+            edrItem.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
+            edrToggleItem = edrItem
             menu.addItem(edrItem)
         }
         menu.addItem(NSMenuItem.separator())
@@ -192,26 +170,12 @@ class StatusBarController {
         edgeLightManager?.toggleDesktopIcons()
     }
 
-    @objc private func edrOff() {
-        if DisplayBrightnessManager.shared.isBoosted {
-            edgeLightManager?.toggleDisplayBrightness()
-        }
-        updateEDRMenuStates()
+    @objc private func toggleDisplayBrightness() {
+        edgeLightManager?.toggleDisplayBrightness()
     }
 
-    @objc private func setEDRLevel(_ sender: NSMenuItem) {
-        let level = Double(sender.tag) / 100.0
-        edgeLightManager?.setEDRIntensity(level)
-        updateEDRMenuStates()
-    }
-
-    func updateEDRMenuStates() {
-        let isBoosted = DisplayBrightnessManager.shared.isBoosted
-        let current = AppSettings.shared.edrIntensity
-        edrOffItem?.state = isBoosted ? .off : .on
-        for (level, item) in edrMenuItems {
-            item.state = (isBoosted && current == level) ? .on : .off
-        }
+    func updateEDRMenuState() {
+        edrToggleItem?.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
     }
 
     @objc private func toggleControls() {

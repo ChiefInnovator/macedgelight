@@ -7,6 +7,7 @@ class EdgeLightManager {
     private var controlPanel: ControlPanelWindow?
     private var statusBar: StatusBarController?
     private var magnifierWindow: MagnifierWindow?
+    private var edrInfoWindow: EDRInfoWindow?
     private var screenChangeObserver: Any?
 
     private let brightnessStep = 0.15
@@ -60,6 +61,14 @@ class EdgeLightManager {
             showMagnifier()
         }
 
+        // Show EDR info window when running under debugger
+        if EDRInfoWindow.isDebuggerAttached() {
+            let info = EDRInfoWindow()
+            info.orderFrontRegardless()
+            info.startUpdating()
+            edrInfoWindow = info
+        }
+
         // Listen for screen configuration changes (monitor plug/unplug)
         screenChangeObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
@@ -76,6 +85,8 @@ class EdgeLightManager {
         hotkeyManager.unregister()
         monitorManager.removeAllOverlays()
         hideMagnifier()
+        edrInfoWindow?.close()
+        edrInfoWindow = nil
         controlPanel?.close()
         if let observer = screenChangeObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -150,6 +161,19 @@ class EdgeLightManager {
         monitorManager.applySettingsToAll()
     }
 
+    /// Resets only the ring light visual settings (brightness, color, border, menu bar mode, cursor reveal).
+    /// Leaves EDR boost, magnifier, desktop icons, and capture visibility unchanged.
+    func resetRingLight() {
+        settings.brightness = 1.0
+        settings.colorTemperature = 0.5
+        settings.isLightOn = true
+        settings.menuBarMode = 2
+        settings.cursorRevealEnabled = false
+        settings.borderWidth = 60.0
+        monitorManager.applySettingsToAll()
+        controlPanel?.updateToggleStates()
+    }
+
     func resetToDefaults() {
         let wasDesktopHidden = settings.desktopIconsHidden
         if DisplayBrightnessManager.shared.isBoosted {
@@ -208,27 +232,11 @@ class EdgeLightManager {
 
     // MARK: - Display Brightness Boost
 
-    func setEDRIntensity(_ intensity: Double) {
-        let mgr = DisplayBrightnessManager.shared
-        settings.edrIntensity = intensity
-        if mgr.isBoosted {
-            mgr.updateIntensity()
-        } else {
-            mgr.toggle()
-            settings.edrBoosted = true
-        }
-        updateEDRUI()
-    }
-
     func toggleDisplayBrightness() {
         DisplayBrightnessManager.shared.toggle()
         settings.edrBoosted = DisplayBrightnessManager.shared.isBoosted
-        updateEDRUI()
-    }
-
-    private func updateEDRUI() {
         controlPanel?.updateToggleStates()
-        statusBar?.updateEDRMenuStates()
+        statusBar?.updateEDRMenuState()
     }
 
     // MARK: - Magnifier

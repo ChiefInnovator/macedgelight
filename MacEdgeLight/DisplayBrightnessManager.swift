@@ -3,12 +3,15 @@ import Metal
 import QuartzCore
 
 /// Boosts display brightness into XDR extended range using a full-screen Metal
-/// overlay with multiply compositing. The overlay renders EDR white (2.0) and
-/// composites via multiply blend, so all screen content is doubled in brightness
-/// into the XDR range. Hardware backlight is also set to max via DisplayServices.
+/// overlay with multiply compositing. The overlay renders at the maximum current
+/// EDR headroom, dynamically queried every frame, so all screen content is
+/// boosted to the brightest the display can produce. Hardware backlight is also
+/// set to max via DisplayServices.
 ///
 /// The Metal layer must be re-rendered periodically — macOS dynamically manages
 /// EDR headroom and decays extended range if no new frames are presented.
+/// Headroom is queried on every frame to prevent white-screen clipping when
+/// the available range changes (brightness adjustment, True Tone, sleep/wake).
 class DisplayBrightnessManager {
     static let shared = DisplayBrightnessManager()
 
@@ -17,10 +20,11 @@ class DisplayBrightnessManager {
     private(set) var isChanging = false
 
     private var overlayWindows: [NSWindow] = []
-    private var metalLayers: [(CAMetalLayer, Double)] = []
+    private var metalLayers: [(CAMetalLayer, NSScreen)] = []
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
     private var screenObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
     private var savedBrightness: [CGDirectDisplayID: Float] = [:]
@@ -62,11 +66,6 @@ class DisplayBrightnessManager {
         if isBoosted { deactivate() }
     }
 
-    func updateIntensity() {
-        guard isBoosted else { return }
-        rebuildOverlays()
-    }
-
     // MARK: - Activate / Deactivate
 
     private func activate() {
@@ -85,6 +84,10 @@ class DisplayBrightnessManager {
         if let obs = screenObserver {
             NotificationCenter.default.removeObserver(obs)
             screenObserver = nil
+        }
+        if let obs = wakeObserver {
+            NotificationCenter.default.removeObserver(obs)
+            wakeObserver = nil
         }
         for window in overlayWindows {
             window.orderOut(nil)
@@ -151,6 +154,18 @@ class DisplayBrightnessManager {
 
     // MARK: - EDR overlay
 
+    /// Returns the current usable EDR headroom for a screen, with fallback
+    /// for the macOS sleep/wake bug where the dynamic value drops to 1.0.
+    private func currentHeadroom(for screen: NSScreen) -> Double {
+        let current = screen.maximumExtendedDynamicRangeColorComponentValue
+        // macOS bug: returns 1.0 after sleep/wake on some displays even when
+        // EDR is active. Fall back to the potential max in that case.
+        if current <= 1.0 {
+            return screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+        }
+        return current
+    }
+
     private func createOverlays() {
         guard let device = metalDevice, let queue = commandQueue else { return }
 
@@ -206,9 +221,9 @@ class DisplayBrightnessManager {
             )
             rootLayer.addSublayer(metalLayer)
 
-            let brightness = min(AppSettings.shared.edrIntensity, Double(maxEDR))
-            renderFrame(metalLayer: metalLayer, brightness: brightness, queue: queue)
-            metalLayers.append((metalLayer, brightness))
+            let headroom = currentHeadroom(for: screen)
+            renderFrame(metalLayer: metalLayer, brightness: headroom, queue: queue)
+            metalLayers.append((metalLayer, screen))
             window.orderFront(nil)
             overlayWindows.append(window)
         }
@@ -220,6 +235,18 @@ class DisplayBrightnessManager {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.rebuildOverlays()
+        }
+
+        // After sleep/wake, headroom may be stale — rebuild overlays so the
+        // display link picks up fresh values.
+        wakeObserver = NotificationCenter.default.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            // Short delay: headroom takes a moment to stabilize after wake
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                self?.rebuildOverlays()
+            }
         }
     }
 
@@ -247,8 +274,12 @@ class DisplayBrightnessManager {
         defer { renderLock.unlock() }
         guard let queue = commandQueue else { return }
         let layers = metalLayers  // Snapshot to avoid mutation during iteration
-        for (layer, brightness) in layers {
-            renderFrame(metalLayer: layer, brightness: brightness, queue: queue)
+        for (layer, screen) in layers {
+            // Use the maximum potential headroom directly so brightness jumps
+            // to full immediately instead of ramping up as macOS warms the
+            // dynamic headroom value.
+            let headroom = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+            renderFrame(metalLayer: layer, brightness: headroom, queue: queue)
         }
     }
 

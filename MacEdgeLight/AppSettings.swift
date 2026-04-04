@@ -19,7 +19,6 @@ class AppSettings: ObservableObject {
         static let visibleInCapture = "visibleInCapture"
         static let borderWidth = "borderWidth"
         static let magnifierEnabled = "magnifierEnabled"
-        static let edrIntensity = "edrIntensity"
         static let edrBoosted = "edrBoosted"
     }
 
@@ -76,10 +75,6 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(magnifierEnabled, forKey: Keys.magnifierEnabled) }
     }
 
-    @Published var edrIntensity: Double {
-        didSet { defaults.set(edrIntensity, forKey: Keys.edrIntensity) }
-    }
-
     @Published var edrBoosted: Bool {
         didSet { defaults.set(edrBoosted, forKey: Keys.edrBoosted) }
     }
@@ -94,7 +89,6 @@ class AppSettings: ObservableObject {
         visibleInCapture = false
         borderWidth = 60.0
         magnifierEnabled = false
-        edrIntensity = 1.8
         edrBoosted = false
     }
 
@@ -114,7 +108,6 @@ class AppSettings: ObservableObject {
             Keys.visibleInCapture: false,
             Keys.borderWidth: 60.0,
             Keys.magnifierEnabled: false,
-            Keys.edrIntensity: 1.8,
             Keys.edrBoosted: false,
         ])
 
@@ -139,7 +132,6 @@ class AppSettings: ObservableObject {
         self.visibleInCapture = defaults.bool(forKey: Keys.visibleInCapture)
         self.borderWidth = defaults.double(forKey: Keys.borderWidth)
         self.magnifierEnabled = defaults.bool(forKey: Keys.magnifierEnabled)
-        self.edrIntensity = defaults.double(forKey: Keys.edrIntensity)
         self.edrBoosted = defaults.bool(forKey: Keys.edrBoosted)
     }
 }

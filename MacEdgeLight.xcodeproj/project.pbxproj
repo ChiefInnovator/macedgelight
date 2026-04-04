@@ -20,6 +20,7 @@
 		AA000011 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100011; };
 		AA000012 /* MagnifierWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100012; };
 		AA000013 /* DisplayBrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100013; };
+		AA000014 /* EDRInfoWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		AA100011 /* LoginItemManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginItemManager.swift; sourceTree = "<group>"; };
 		AA100012 /* MagnifierWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagnifierWindow.swift; sourceTree = "<group>"; };
 		AA100013 /* DisplayBrightnessManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayBrightnessManager.swift; sourceTree = "<group>"; };
+		AA100014 /* EDRInfoWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EDRInfoWindow.swift; sourceTree = "<group>"; };
 		AA100020 /* MacEdgeLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacEdgeLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA100030 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA100031 /* MacEdgeLight.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacEdgeLight.entitlements; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 				AA100011 /* LoginItemManager.swift */,
 				AA100012 /* MagnifierWindow.swift */,
 				AA100013 /* DisplayBrightnessManager.swift */,
+				AA100014 /* EDRInfoWindow.swift */,
 				AA100009 /* Assets.xcassets */,
 				AA100030 /* Info.plist */,
 				AA100031 /* MacEdgeLight.entitlements */,
@@ -166,6 +169,7 @@
 				AA000011 /* LoginItemManager.swift in Sources */,
 				AA000012 /* MagnifierWindow.swift in Sources */,
 				AA000013 /* DisplayBrightnessManager.swift in Sources */,
+				AA000014 /* EDRInfoWindow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -189,7 +193,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelight;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -215,7 +219,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.5;
+				MARKETING_VERSION = 1.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelight;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
