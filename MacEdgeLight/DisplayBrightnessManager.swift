@@ -28,6 +28,16 @@ class DisplayBrightnessManager {
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
     private var savedBrightness: [CGDirectDisplayID: Float] = [:]
+    private var savedGammaTables: [CGDirectDisplayID: (red: [CGGammaValue], green: [CGGammaValue], blue: [CGGammaValue])] = [:]
+
+    /// Maximum EDR headroom requested from macOS via the invisible Metal overlay.
+    /// The overlay is not visible — it only signals macOS to grant headroom.
+    private let maxHeadroomCap: Double = 16.0
+
+    /// Linear gamma scale factor — maps the 0-1 range into 0-gammaScale,
+    /// stretching values into the EDR range. Preserves relative contrast
+    /// (unlike power curves which compress midtones).
+    private let gammaScale: Float = 1.45
 
     // DisplayServices function pointers
     private typealias GetBrightnessFn = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
@@ -72,6 +82,7 @@ class DisplayBrightnessManager {
         isChanging = true
         saveCurrentBrightness()
         setMaxBrightness()
+        saveAndBoostGamma()
         createOverlays()
         startDisplayLink()
         isBoosted = true
@@ -94,6 +105,7 @@ class DisplayBrightnessManager {
         }
         overlayWindows.removeAll()
         metalLayers.removeAll()
+        restoreGamma()
         restoreBrightness()
         isBoosted = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
@@ -128,6 +140,55 @@ class DisplayBrightnessManager {
         savedBrightness.removeAll()
     }
 
+    // MARK: - Gamma table boost
+
+    private func saveAndBoostGamma() {
+        savedGammaTables.removeAll()
+        let sampleCount: UInt32 = 256
+
+        for screen in NSScreen.screens {
+            let displayID = screen.displayID
+            var red = [CGGammaValue](repeating: 0, count: Int(sampleCount))
+            var green = [CGGammaValue](repeating: 0, count: Int(sampleCount))
+            var blue = [CGGammaValue](repeating: 0, count: Int(sampleCount))
+            var actualCount: UInt32 = 0
+
+            guard CGGetDisplayTransferByTable(displayID, sampleCount, &red, &green, &blue, &actualCount) == .success,
+                  actualCount > 1 else { continue }
+
+            // Save original tables
+            savedGammaTables[displayID] = (
+                red: Array(red[0..<Int(actualCount)]),
+                green: Array(green[0..<Int(actualCount)]),
+                blue: Array(blue[0..<Int(actualCount)]),
+            )
+
+            // Linear scale: maps 0-1 into 0-gammaScale, pushing values into
+            // the EDR range. Preserves relative contrast between tones —
+            // blacks stay black, everything else gets proportionally brighter.
+            let count = Int(actualCount)
+            var boostedRed = [CGGammaValue](repeating: 0, count: count)
+            var boostedGreen = [CGGammaValue](repeating: 0, count: count)
+            var boostedBlue = [CGGammaValue](repeating: 0, count: count)
+
+            for i in 0..<count {
+                boostedRed[i] = red[i] * gammaScale
+                boostedGreen[i] = green[i] * gammaScale
+                boostedBlue[i] = blue[i] * gammaScale
+            }
+
+            CGSetDisplayTransferByTable(displayID, UInt32(count), boostedRed, boostedGreen, boostedBlue)
+        }
+    }
+
+    private func restoreGamma() {
+        for (displayID, tables) in savedGammaTables {
+            let count = tables.red.count
+            CGSetDisplayTransferByTable(displayID, UInt32(count), tables.red, tables.green, tables.blue)
+        }
+        savedGammaTables.removeAll()
+    }
+
     // MARK: - Display link
 
     private func startDisplayLink() {
@@ -152,19 +213,14 @@ class DisplayBrightnessManager {
         }
     }
 
+    /// Returns the headroom value currently being applied to the overlay for a given screen.
+    /// Capped to the current headroom macOS has actually granted (not potential).
+    func appliedHeadroom(for screen: NSScreen) -> Double {
+        return min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
+    }
+
     // MARK: - EDR overlay
 
-    /// Returns the current usable EDR headroom for a screen, with fallback
-    /// for the macOS sleep/wake bug where the dynamic value drops to 1.0.
-    private func currentHeadroom(for screen: NSScreen) -> Double {
-        let current = screen.maximumExtendedDynamicRangeColorComponentValue
-        // macOS bug: returns 1.0 after sleep/wake on some displays even when
-        // EDR is active. Fall back to the potential max in that case.
-        if current <= 1.0 {
-            return screen.maximumPotentialExtendedDynamicRangeColorComponentValue
-        }
-        return current
-    }
 
     private func createOverlays() {
         guard let device = metalDevice, let queue = commandQueue else { return }
@@ -175,6 +231,9 @@ class DisplayBrightnessManager {
             let maxEDR = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
             guard maxEDR > 1.0 else { continue }
 
+            // Full-screen EDR overlay using sourceOver compositing. Renders
+            // EDR white behind all content to boost the display's actual light
+            // output into XDR range without multiplying screen content.
             let window = NSWindow(
                 contentRect: screen.frame,
                 styleMask: .borderless,
@@ -191,11 +250,10 @@ class DisplayBrightnessManager {
             window.isReleasedWhenClosed = false
             window.animationBehavior = .none
 
-            // Layer-hosting: we own the root layer, AppKit won't reconfigure it
             let rootLayer = CALayer()
             rootLayer.isOpaque = false
             rootLayer.backgroundColor = CGColor.clear
-            rootLayer.compositingFilter = "multiplyBlendMode"
+            // No compositingFilter — default sourceOver compositing
 
             let view = NSView(frame: CGRect(origin: .zero, size: screen.frame.size))
             view.layer = rootLayer
@@ -221,7 +279,7 @@ class DisplayBrightnessManager {
             )
             rootLayer.addSublayer(metalLayer)
 
-            let headroom = currentHeadroom(for: screen)
+            let headroom = min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
             renderFrame(metalLayer: metalLayer, brightness: headroom, queue: queue)
             metalLayers.append((metalLayer, screen))
             window.orderFront(nil)
@@ -278,7 +336,7 @@ class DisplayBrightnessManager {
             // Use the maximum potential headroom directly so brightness jumps
             // to full immediately instead of ramping up as macOS warms the
             // dynamic headroom value.
-            let headroom = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
+            let headroom = min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
             renderFrame(metalLayer: layer, brightness: headroom, queue: queue)
         }
     }
@@ -291,8 +349,10 @@ class DisplayBrightnessManager {
         desc.colorAttachments[0].texture = drawable.texture
         desc.colorAttachments[0].loadAction = .clear
         desc.colorAttachments[0].storeAction = .store
+        // Render EDR values with alpha=0: invisible to the user but signals
+        // macOS to grant extended dynamic range headroom for this display.
         desc.colorAttachments[0].clearColor = MTLClearColor(
-            red: brightness, green: brightness, blue: brightness, alpha: 1.0
+            red: brightness, green: brightness, blue: brightness, alpha: 0.0
         )
 
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return }
