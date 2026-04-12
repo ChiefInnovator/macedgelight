@@ -87,24 +87,38 @@ class EdgeLightManager {
             self?.positionControlPanel()
         }
 
-        // Turn XDR boost off before sleep. On wake, headroom is gone and the
-        // boosted gamma LUT would clip to white; always-off is simpler and
-        // safer than trying to restore across a sleep cycle.
+        // Tear the XDR boost down before sleep and rebuild it after wake.
+        // Restoring across sleep in place is unreliable — headroom vanishes
+        // while our boosted gamma LUT stays live, and macOS can restore a
+        // dirty LUT cached from before sleep. We deactivate without touching
+        // `settings.edrBoosted` so it survives sleep and drives re-activation
+        // on wake after the gamma has been wiped clean.
         let workspaceCenter = NSWorkspace.shared.notificationCenter
         willSleepObserver = workspaceCenter.addObserver(
             forName: NSWorkspace.willSleepNotification,
             object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.disableDisplayBrightnessIfOn()
+        ) { _ in
+            if DisplayBrightnessManager.shared.isBoosted {
+                DisplayBrightnessManager.shared.toggle()
+            }
         }
         didWakeObserver = workspaceCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            // Unconditional — macOS can restore a dirty LUT cached from
-            // before sleep even when we never activated the boost this session.
             DisplayBrightnessManager.resetGammaToProfile()
-            self?.disableDisplayBrightnessIfOn()
+            guard let self,
+                  self.settings.edrBoosted,
+                  DisplayBrightnessManager.shared.isAvailable else { return }
+            // Let macOS settle headroom before we re-engage the boost.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                guard let self,
+                      self.settings.edrBoosted,
+                      !DisplayBrightnessManager.shared.isBoosted else { return }
+                DisplayBrightnessManager.shared.toggle()
+                self.controlPanel?.updateToggleStates()
+                self.statusBar?.updateEDRMenuState()
+            }
         }
     }
 
@@ -272,14 +286,6 @@ class EdgeLightManager {
     func toggleDisplayBrightness() {
         DisplayBrightnessManager.shared.toggle()
         settings.edrBoosted = DisplayBrightnessManager.shared.isBoosted
-        controlPanel?.updateToggleStates()
-        statusBar?.updateEDRMenuState()
-    }
-
-    private func disableDisplayBrightnessIfOn() {
-        guard DisplayBrightnessManager.shared.isBoosted else { return }
-        DisplayBrightnessManager.shared.toggle()
-        settings.edrBoosted = false
         controlPanel?.updateToggleStates()
         statusBar?.updateEDRMenuState()
     }
