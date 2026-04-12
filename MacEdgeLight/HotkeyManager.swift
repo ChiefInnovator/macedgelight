@@ -26,23 +26,23 @@ class HotkeyManager {
     private var toggleAction: HotkeyAction?
     private var brightnessUpAction: HotkeyAction?
     private var brightnessDownAction: HotkeyAction?
-    private var emergencyDisableAction: HotkeyAction?
+    private var panicQuitAction: HotkeyAction?
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
-    // 5 unmodified "O" key taps within 2s disables EDR boost
+    // 5 unmodified "Q" key taps within 2s quits the app
     private var panicDetector = PanicTapDetector(threshold: 5, window: 2.0)
 
     func register(
         toggle: @escaping HotkeyAction,
         brightnessUp: @escaping HotkeyAction,
         brightnessDown: @escaping HotkeyAction,
-        emergencyDisable: @escaping HotkeyAction
+        panicQuit: @escaping HotkeyAction
     ) {
         self.toggleAction = toggle
         self.brightnessUpAction = brightnessUp
         self.brightnessDownAction = brightnessDown
-        self.emergencyDisableAction = emergencyDisable
+        self.panicQuitAction = panicQuit
 
         // Global monitor catches events when app is NOT focused
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -63,10 +63,10 @@ class HotkeyManager {
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-        // Panic disable: 5 unmodified "O" taps in 2s. Ignore auto-repeat.
-        if event.keyCode == UInt16(kVK_ANSI_O) && flags.isEmpty && !event.isARepeat {
+        // Panic quit: 5 unmodified "Q" taps in 2s. Ignore auto-repeat.
+        if event.keyCode == UInt16(kVK_ANSI_Q) && flags.isEmpty && !event.isARepeat {
             if panicDetector.register(at: Date().timeIntervalSinceReferenceDate) {
-                emergencyDisableAction?()
+                panicQuitAction?()
             }
         }
 

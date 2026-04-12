@@ -24,7 +24,6 @@ class DisplayBrightnessManager {
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
     private var screenObserver: NSObjectProtocol?
-    private var wakeObserver: NSObjectProtocol?
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
     private var savedGammaTables: [CGDirectDisplayID: (red: [CGGammaValue], green: [CGGammaValue], blue: [CGGammaValue])] = [:]
@@ -68,6 +67,14 @@ class DisplayBrightnessManager {
         if isBoosted { deactivate() }
     }
 
+    /// Force every display's gamma LUT back to its ColorSync profile default.
+    /// Safe to call at any time — used at launch and on wake to wipe out any
+    /// leaked/dirty LUT state from prior runs or sleep cycles that would
+    /// otherwise make every bright pixel clip to white.
+    static func resetGammaToProfile() {
+        CGDisplayRestoreColorSyncSettings()
+    }
+
     // MARK: - Activate / Deactivate
 
     private func activate() {
@@ -109,10 +116,6 @@ class DisplayBrightnessManager {
             if let obs = self.screenObserver {
                 NotificationCenter.default.removeObserver(obs)
                 self.screenObserver = nil
-            }
-            if let obs = self.wakeObserver {
-                NotificationCenter.default.removeObserver(obs)
-                self.wakeObserver = nil
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
@@ -319,18 +322,6 @@ class DisplayBrightnessManager {
             object: nil, queue: .main
         ) { [weak self] _ in
             self?.rebuildOverlays()
-        }
-
-        // After sleep/wake, headroom may be stale — rebuild overlays so the
-        // display link picks up fresh values.
-        wakeObserver = NotificationCenter.default.addObserver(
-            forName: NSWorkspace.didWakeNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            // Short delay: headroom takes a moment to stabilize after wake
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                self?.rebuildOverlays()
-            }
         }
     }
 

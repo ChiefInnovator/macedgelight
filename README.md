@@ -48,7 +48,7 @@
 - Dual technique: invisible Metal EDR overlay signals macOS to grant headroom, while linear gamma scaling pushes display values into the extended range — bright without washout
 - **Adaptive safety clamp** — the gamma scale re-calibrates ~2×/sec to stay within the headroom macOS is currently granting, so content never clips to white when thermals or ambient light reduce available headroom
 - **Hard on/off** — the boost disables instantly instead of ramping, so you can kill it the moment you need to
-- **Panic disable** — tap the `O` key five times in two seconds to force the boost off from anywhere
+- **Panic quit** — tap the `Q` key five times in two seconds to quit MacEdgeLight from anywhere
 - **Graceful degradation** — on Macs without an EDR-capable display the control is clearly marked "Display not supported"
 - One-click toggle from the control bar or status bar menu
 - Ideal for users with low vision or anyone working in bright environments
@@ -120,7 +120,7 @@
 | `Cmd + Shift + L` | Toggle light on/off |
 | `Cmd + Shift + Up` | Increase brightness |
 | `Cmd + Shift + Down` | Decrease brightness |
-| Tap `O` five times in 2 s | Panic disable for XDR brightness boost |
+| Tap `Q` five times in 2 s | Panic quit MacEdgeLight |
 
 ## Control Bar
 

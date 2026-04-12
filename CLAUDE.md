@@ -23,7 +23,7 @@ Or open `MacEdgeLight.xcodeproj` in Xcode. No sandbox entitlements (needed for o
 - **StatusBarController** — Menu bar icon and dropdown menu
 - **HotkeyManager** — Global keyboard shortcuts (Cmd+Shift+L/Up/Down)
 - **LoginItemManager** — Launch-at-login via SMAppService
-- **DisplayBrightnessManager** — XDR brightness boost via invisible Metal EDR overlay (alpha=0, headroom signaling) + linear gamma table scaling (1.45x). Constants: `maxHeadroomCap`, `gammaScale`. Includes sleep/wake resilience via `didWakeNotification`.
+- **DisplayBrightnessManager** — XDR brightness boost via invisible Metal EDR overlay (alpha=0, headroom signaling) + linear gamma table scaling (1.45x). Constants: `maxHeadroomCap`, `gammaScale`. Boost is force-disabled on `willSleep`/`didWake` (observed in `EdgeLightManager`) — restoring across sleep is unreliable since headroom vanishes while the boosted gamma LUT stays live.
 - **MagnifierWindow** — Floating magnifier loupe following cursor
 - **EDRInfoWindow** — Debug-only floating diagnostics panel (appears when debugger attached). Shows live EDR headroom, gamma deviation, color space, external EDR detection. Copy button in titlebar.
 

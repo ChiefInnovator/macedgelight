@@ -9,6 +9,8 @@ class EdgeLightManager {
     private var magnifierWindow: MagnifierWindow?
     private var edrInfoWindow: EDRInfoWindow?
     private var screenChangeObserver: Any?
+    private var willSleepObserver: Any?
+    private var didWakeObserver: Any?
 
     private let brightnessStep = 0.15
     private let brightnessStepFine = 0.025
@@ -28,6 +30,10 @@ class EdgeLightManager {
     func start() {
         // Create overlay windows
         monitorManager.createOverlays()
+
+        // Wipe any leaked gamma LUT from a prior crashed run or dirty sleep
+        // cycle before anything else touches display transfer tables.
+        DisplayBrightnessManager.resetGammaToProfile()
 
         // Restore EDR brightness boost state before UI is created
         if settings.edrBoosted && DisplayBrightnessManager.shared.isAvailable {
@@ -54,7 +60,7 @@ class EdgeLightManager {
             toggle: { [weak self] in self?.toggleLight() },
             brightnessUp: { [weak self] in self?.increaseBrightness() },
             brightnessDown: { [weak self] in self?.decreaseBrightness() },
-            emergencyDisable: { [weak self] in self?.emergencyDisableDisplayBrightness() }
+            panicQuit: { NSApp.terminate(nil) }
         )
 
         // Restore magnifier state
@@ -80,6 +86,26 @@ class EdgeLightManager {
             self?.monitorManager.refreshForScreenChanges()
             self?.positionControlPanel()
         }
+
+        // Turn XDR boost off before sleep. On wake, headroom is gone and the
+        // boosted gamma LUT would clip to white; always-off is simpler and
+        // safer than trying to restore across a sleep cycle.
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        willSleepObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.disableDisplayBrightnessIfOn()
+        }
+        didWakeObserver = workspaceCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            // Unconditional — macOS can restore a dirty LUT cached from
+            // before sleep even when we never activated the boost this session.
+            DisplayBrightnessManager.resetGammaToProfile()
+            self?.disableDisplayBrightnessIfOn()
+        }
     }
 
     func stop() {
@@ -91,6 +117,15 @@ class EdgeLightManager {
         controlPanel?.close()
         if let observer = screenChangeObserver {
             NotificationCenter.default.removeObserver(observer)
+        }
+        let workspaceCenter = NSWorkspace.shared.notificationCenter
+        if let observer = willSleepObserver {
+            workspaceCenter.removeObserver(observer)
+            willSleepObserver = nil
+        }
+        if let observer = didWakeObserver {
+            workspaceCenter.removeObserver(observer)
+            didWakeObserver = nil
         }
     }
 
@@ -241,8 +276,7 @@ class EdgeLightManager {
         statusBar?.updateEDRMenuState()
     }
 
-    /// Panic off — five Option taps force-disable the EDR boost.
-    func emergencyDisableDisplayBrightness() {
+    private func disableDisplayBrightnessIfOn() {
         guard DisplayBrightnessManager.shared.isBoosted else { return }
         DisplayBrightnessManager.shared.toggle()
         settings.edrBoosted = false
