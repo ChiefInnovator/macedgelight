@@ -27,7 +27,6 @@ class DisplayBrightnessManager {
     private var wakeObserver: NSObjectProtocol?
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
-    private var savedBrightness: [CGDirectDisplayID: Float] = [:]
     private var savedGammaTables: [CGDirectDisplayID: (red: [CGGammaValue], green: [CGGammaValue], blue: [CGGammaValue])] = [:]
 
     /// Maximum EDR headroom requested from macOS via the invisible Metal overlay.
@@ -49,12 +48,6 @@ class DisplayBrightnessManager {
     private var currentAppliedGammaScale: Float = 1.0
     private var lastGammaUpdate: TimeInterval = 0
 
-    // DisplayServices function pointers
-    private typealias GetBrightnessFn = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
-    private typealias SetBrightnessFn = @convention(c) (CGDirectDisplayID, Float) -> Int32
-    private let getBrightness: GetBrightnessFn?
-    private let setBrightness: SetBrightnessFn?
-
     var isAvailable: Bool {
         guard metalDevice != nil else { return false }
         return NSScreen.screens.contains {
@@ -65,17 +58,6 @@ class DisplayBrightnessManager {
     private init() {
         metalDevice = MTLCreateSystemDefaultDevice()
         commandQueue = metalDevice?.makeCommandQueue()
-
-        let handle = dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY)
-        if let handle = handle,
-           let getPtr = dlsym(handle, "DisplayServicesGetBrightness"),
-           let setPtr = dlsym(handle, "DisplayServicesSetBrightness") {
-            getBrightness = unsafeBitCast(getPtr, to: GetBrightnessFn.self)
-            setBrightness = unsafeBitCast(setPtr, to: SetBrightnessFn.self)
-        } else {
-            getBrightness = nil
-            setBrightness = nil
-        }
     }
 
     func toggle() {
@@ -90,8 +72,10 @@ class DisplayBrightnessManager {
 
     private func activate() {
         isChanging = true
-        saveCurrentBrightness()
-        setMaxBrightness()
+        // Hardware backlight intentionally left alone — DisplayServices
+        // always animates brightness changes over ~300-500ms, which makes
+        // the toggle feel mushy. The gamma LUT + EDR headroom deliver the
+        // perceptible boost and both apply within a single compositor frame.
         saveAndBoostGamma()
         createOverlays()
         startDisplayLink()
@@ -101,53 +85,37 @@ class DisplayBrightnessManager {
 
     private func deactivate() {
         isChanging = true
+        isBoosted = false
+
+        // Gamma LUT revert is instant — do it first so the 1.45x scale
+        // disappears within the next compositor frame.
+        restoreGamma()
+
+        // Kill EDR signaling synchronously. Previously these ran async and
+        // macOS held EDR headroom for ~500ms while the display link drained,
+        // which looked like a visible fade. Stopping the display link and
+        // removing the Metal layers on the caller's frame means macOS sees
+        // "no more EDR content" immediately and starts dropping headroom.
         stopDisplayLink()
-        if let obs = screenObserver {
-            NotificationCenter.default.removeObserver(obs)
-            screenObserver = nil
-        }
-        if let obs = wakeObserver {
-            NotificationCenter.default.removeObserver(obs)
-            wakeObserver = nil
-        }
         for window in overlayWindows {
             window.orderOut(nil)
         }
         overlayWindows.removeAll()
         metalLayers.removeAll()
-        restoreGamma()
-        restoreBrightness()
-        isBoosted = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
-    }
 
-    // MARK: - Hardware brightness
-
-    private func saveCurrentBrightness() {
-        savedBrightness.removeAll()
-        guard let getter = getBrightness else { return }
-        for screen in NSScreen.screens {
-            let displayID = screen.displayID
-            var current: Float = 0
-            if getter(displayID, &current) == 0 {
-                savedBrightness[displayID] = current
+        // Observer cleanup doesn't affect visible state — defer.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            if let obs = self.screenObserver {
+                NotificationCenter.default.removeObserver(obs)
+                self.screenObserver = nil
+            }
+            if let obs = self.wakeObserver {
+                NotificationCenter.default.removeObserver(obs)
+                self.wakeObserver = nil
             }
         }
-    }
-
-    private func setMaxBrightness() {
-        guard let setter = setBrightness else { return }
-        for (displayID, _) in savedBrightness {
-            _ = setter(displayID, 1.0)
-        }
-    }
-
-    private func restoreBrightness() {
-        guard let setter = setBrightness else { return }
-        for (displayID, brightness) in savedBrightness {
-            _ = setter(displayID, brightness)
-        }
-        savedBrightness.removeAll()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
     }
 
     // MARK: - Gamma table boost
@@ -201,15 +169,23 @@ class DisplayBrightnessManager {
     /// sustain, using the minimum live headroom across EDR screens with a
     /// safety margin. Never returns below 1.0 (neutral).
     private func safeGammaScale() -> Float {
-        let edrScreens = NSScreen.screens.filter {
-            $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
-        }
-        guard !edrScreens.isEmpty else { return 1.0 }
-        let minHeadroom = edrScreens
+        let headrooms = NSScreen.screens
+            .filter { $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 }
             .map { Float($0.maximumExtendedDynamicRangeColorComponentValue) }
-            .min() ?? 1.0
-        let headroomCeiling = max(1.0, minHeadroom * gammaHeadroomSafety)
-        return min(gammaScale, headroomCeiling)
+        return Self.safeGammaScale(
+            desired: gammaScale,
+            liveHeadrooms: headrooms,
+            safety: gammaHeadroomSafety
+        )
+    }
+
+    /// Pure function version, exposed for tests. Given the desired max gamma
+    /// scale, a list of live EDR headroom values (one per EDR-capable screen),
+    /// and a safety fraction, returns the scale that should be applied.
+    static func safeGammaScale(desired: Float, liveHeadrooms: [Float], safety: Float) -> Float {
+        guard let minHeadroom = liveHeadrooms.min() else { return 1.0 }
+        let headroomCeiling = max(1.0, minHeadroom * safety)
+        return min(desired, headroomCeiling)
     }
 
     /// Called from the display link every frame; throttled to ~2 Hz. When

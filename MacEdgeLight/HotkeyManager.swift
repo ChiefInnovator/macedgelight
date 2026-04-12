@@ -1,6 +1,25 @@
 import Cocoa
 import Carbon.HIToolbox
 
+/// Rolling-window tap counter. `register(at:)` records a timestamp; returns
+/// true (and resets) when `threshold` taps land within `window` seconds.
+/// Pure logic — no NSEvent or clock dependency — so it's unit-testable.
+struct PanicTapDetector {
+    let threshold: Int
+    let window: TimeInterval
+    private(set) var taps: [TimeInterval] = []
+
+    mutating func register(at time: TimeInterval) -> Bool {
+        taps.append(time)
+        taps.removeAll { time - $0 > window }
+        if taps.count >= threshold {
+            taps.removeAll()
+            return true
+        }
+        return false
+    }
+}
+
 class HotkeyManager {
     typealias HotkeyAction = () -> Void
 
@@ -11,10 +30,8 @@ class HotkeyManager {
     private var globalMonitor: Any?
     private var localMonitor: Any?
 
-    // Panic tap detection: 5 unmodified "O" key taps within 2s disables EDR boost
-    private var panicTapTimes: [TimeInterval] = []
-    private let panicTapCount = 5
-    private let panicTapWindow: TimeInterval = 2.0
+    // 5 unmodified "O" key taps within 2s disables EDR boost
+    private var panicDetector = PanicTapDetector(threshold: 5, window: 2.0)
 
     func register(
         toggle: @escaping HotkeyAction,
@@ -48,11 +65,7 @@ class HotkeyManager {
 
         // Panic disable: 5 unmodified "O" taps in 2s. Ignore auto-repeat.
         if event.keyCode == UInt16(kVK_ANSI_O) && flags.isEmpty && !event.isARepeat {
-            let now = Date().timeIntervalSinceReferenceDate
-            panicTapTimes.append(now)
-            panicTapTimes.removeAll { now - $0 > panicTapWindow }
-            if panicTapTimes.count >= panicTapCount {
-                panicTapTimes.removeAll()
+            if panicDetector.register(at: Date().timeIntervalSinceReferenceDate) {
                 emergencyDisableAction?()
             }
         }

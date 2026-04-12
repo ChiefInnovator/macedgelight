@@ -8,7 +8,7 @@
 ## Why MacEdgeLight?
 
 | Use Case | How It Helps |
-|---|---|
+| --- | --- |
 | **Streaming & Podcasting** | Add a professional ambient glow to your setup. Toggle capture visibility so viewers see the effect — or keep it private. |
 | **Zoom, Teams & Video Calls** | Stand out on camera with a polished edge glow that frames your screen shares and makes demos pop during meetings. |
 | **Presentations & Demos** | Frame your screen with light to draw audience attention. Hide desktop icons for a clean look. Cursor reveal spotlights where you're pointing. |
@@ -20,8 +20,8 @@
 
 ### MacEdgeLight vs. Physical Ring Lights
 
-| | MacEdgeLight | Physical Ring Light |
-|---|---|---|
+|  | MacEdgeLight | Physical Ring Light |
+| --- | --- | --- |
 | **Cost** | Free | $30–$100+ |
 | **Setup** | Download and run | Mount, cable, power supply |
 | **Portability** | Built into your Mac — goes everywhere | Extra gear to pack and carry |
@@ -34,6 +34,7 @@
 ## Features
 
 ### Edge Light Overlay
+
 - Smooth glowing border around your entire screen with rounded corners
 - Adjustable brightness from subtle (20%) to blazing bloom (200%)
 - Color temperature control from cool blue-white to warm amber
@@ -42,58 +43,71 @@
 - Hold any adjustment button for continuous fine-grained control
 
 ### XDR Brightness Boost
+
 - Push your display into extended dynamic range for maximum brightness
 - Dual technique: invisible Metal EDR overlay signals macOS to grant headroom, while linear gamma scaling pushes display values into the extended range — bright without washout
-- Dynamically adapts to display conditions (thermals, ambient light, battery state)
-- Hardware backlight maximized via DisplayServices for peak luminance
+- **Adaptive safety clamp** — the gamma scale re-calibrates ~2×/sec to stay within the headroom macOS is currently granting, so content never clips to white when thermals or ambient light reduce available headroom
+- **Hard on/off** — the boost disables instantly instead of ramping, so you can kill it the moment you need to
+- **Panic disable** — tap the `O` key five times in two seconds to force the boost off from anywhere
+- **Graceful degradation** — on Macs without an EDR-capable display the control is clearly marked "Display not supported"
 - One-click toggle from the control bar or status bar menu
 - Ideal for users with low vision or anyone working in bright environments
 - Requires a Mac with an XDR display (MacBook Pro with Liquid Retina XDR, Pro Display XDR)
 
 ### Bloom Mode
+
 - Push brightness past 100% for an additive white-hot bloom effect
 - Glow radius expands and intensifies at higher brightness levels
 - Smooth animated transitions between all settings
 
 ### Cursor Reveal
+
 - Toggle a feathered circular cutout that follows your cursor
 - See through the glow wherever your mouse goes — great for presentations
 
 ### Magnifier
+
 - Floating magnifier loupe that follows your cursor
 - Useful for demos and presentations where fine detail matters
 
 ### Screen Capture Control
+
 - Hidden from screen capture by default (invisible in Zoom, Teams, or recordings)
 - Toggle visibility to show the glow in streams and recordings
 - Perfect for streamers who want the effect on camera
 
 ### Menu Bar Modes
+
 - **Below** — light stays under the menu bar
 - **Extend** — light covers the menu bar for a fully immersive look
 - **Auto** (default) — light extends over menu bar but smoothly reveals it when your cursor approaches, then extends back when you move away
 
 ### Desktop Icons
+
 - Show/hide all desktop icons with one click
 - Clean desktop for presentations, screencasts, or focus time
 - Automatically restored when the app quits
 
 ### Multi-Monitor
+
 - Show on a single monitor or all monitors simultaneously
 - Cycle between monitors with a button press
 - Adapts automatically when monitors are plugged in or removed
 
 ### Auto-Hiding Controls
+
 - Floating HUD toolbar with quick access to everything
 - Drag grip on the right side for repositioning
 - Fades away after 3 seconds of inactivity — reappears instantly on hover
 - Background dynamically darkens when overlapping the glow
 
 ### Reset to Defaults
+
 - Double-click the lightbulb to reset ring light settings (brightness, color, border) while preserving EDR boost, magnifier, and desktop icon state
 - Full reset button on the control bar or status bar menu restores everything
 
 ### Lightweight
+
 - Pure Swift, native AppKit — no Electron, no web views
 - Runs as a menu bar utility (no Dock icon)
 - Optional launch at login
@@ -102,25 +116,26 @@
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
-|---|---|
+| --- | --- |
 | `Cmd + Shift + L` | Toggle light on/off |
 | `Cmd + Shift + Up` | Increase brightness |
 | `Cmd + Shift + Down` | Decrease brightness |
+| Tap `O` five times in 2 s | Panic disable for XDR brightness boost |
 
 ## Control Bar
 
 The floating toolbar provides quick access to all features:
 
 | Icon | Function | Toggle |
-|---|---|---|
-| Sun (dim) | Decrease brightness (hold to fine-adjust) | |
-| Sun (bright) | Increase brightness (hold to fine-adjust) | |
-| Flame | Warmer color temperature (hold to fine-adjust) | |
-| Snowflake | Cooler color temperature (hold to fine-adjust) | |
-| Compress | Thinner border (hold to fine-adjust) | |
-| Expand | Thicker border (hold to fine-adjust) | |
+| --- | --- | --- |
+| Sun (dim) | Decrease brightness (hold to fine-adjust) |  |
+| Sun (bright) | Increase brightness (hold to fine-adjust) |  |
+| Flame | Warmer color temperature (hold to fine-adjust) |  |
+| Snowflake | Cooler color temperature (hold to fine-adjust) |  |
+| Compress | Thinner border (hold to fine-adjust) |  |
+| Expand | Thicker border (hold to fine-adjust) |  |
 | Lightbulb | Toggle light on/off — double-click to reset | Filled when on |
-| Monitor | Switch to next monitor | |
+| Monitor | Switch to next monitor |  |
 | Monitors | All monitors mode | Filled when on |
 | Menu bar | Menu bar mode: Below → Extend → Auto | Cycles through 3 states |
 | Circle | Cursor reveal mode | Filled when on |
@@ -128,9 +143,9 @@ The floating toolbar provides quick access to all features:
 | HDR | XDR brightness boost | Filled when on |
 | Magnifier | Floating magnifier loupe | Filled when on |
 | Eye | Hide desktop icons | Swaps to eye.slash |
-| Reset | Reset all settings to defaults | |
-| X | Hide controls | |
-| Grip | Drag to reposition the control bar | |
+| Reset | Reset all settings to defaults |  |
+| X | Hide controls |  |
+| Grip | Drag to reposition the control bar |  |
 
 ## Get Started
 
@@ -153,6 +168,7 @@ Open `MacEdgeLight.xcodeproj` in Xcode and build, or use the Makefile:
 
 ```bash
 make build       # Debug build
+make test        # Run unit tests
 make release     # Build DMG + zip for distribution
 make dmg         # DMG only (drag-to-Applications)
 make zip         # Zip only
@@ -175,17 +191,17 @@ The edge light is rendered in a fullscreen, click-through overlay window using C
 
 5. **Cursor cutout** — A radial gradient in `.destinationOut` blend mode punches a feathered circle through the glow at the cursor position.
 
-### XDR Brightness Boost
+### How the XDR Boost Works
 
 The brightness boost uses a dual technique for maximum brightness without washout:
 
 1. **Invisible Metal EDR overlay** — A full-screen `CAMetalLayer` renders EDR values with alpha=0 (invisible) in extended linear Display P3 color space. This signals macOS to grant extended dynamic range headroom without visually affecting screen content. A CVDisplayLink keeps the EDR headroom alive by continuously presenting frames.
 
-2. **Linear gamma scaling** — The display's gamma transfer table is scaled by 1.45x, pushing all pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and washes out), linear scaling preserves relative contrast — blacks stay black, everything else gets brighter.
+2. **Linear gamma scaling** — The display's gamma transfer table is scaled by up to 1.45x, pushing all pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and washes out), linear scaling preserves relative contrast — blacks stay black, everything else gets brighter.
 
-3. **Hardware backlight max** — Set to 100% via the private DisplayServices framework for peak panel luminance.
+3. **Adaptive headroom clamp** — Every render frame (throttled to ~2 Hz), the manager re-queries the current EDR headroom macOS is actually granting and clamps the applied gamma scale to 85% of it. If headroom decays due to thermals, ambient light, True Tone, or auto-brightness, the LUT is re-uploaded at a lower scale so content never clips to white.
 
-The overlay dynamically adapts to the current headroom macOS grants (typically ~2.667x on XDR displays), which varies with thermals, ambient light, and battery state.
+4. **Hard on/off** — The boost disables within a single compositor frame: the gamma LUT is reverted first, then the display link and Metal overlays are torn down synchronously. No hardware backlight manipulation, so there's no ~500ms ramp from `DisplayServicesSetBrightness`.
 
 ### Animation System
 

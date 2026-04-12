@@ -15,13 +15,17 @@ APPLE_ID = rich@mill5.com
 # Store app-specific password in keychain: xcrun notarytool store-credentials "MacEdgeLightNotarize" --apple-id rich@mill5.com --team-id FS6453639M
 NOTARIZE_PROFILE = MacEdgeLightNotarize
 
-.PHONY: all clean build archive export sign notarize dmg zip release
+.PHONY: all clean build test archive export sign notarize dmg zip release
 
 all: build
 
 # Debug build
 build:
 	xcodebuild -scheme $(SCHEME) -configuration Debug build SYMROOT=$(CURDIR)/$(BUILD_DIR)
+
+# Run unit tests
+test:
+	xcodebuild test -scheme $(SCHEME) -destination 'platform=macOS'
 
 # Release archive
 archive:

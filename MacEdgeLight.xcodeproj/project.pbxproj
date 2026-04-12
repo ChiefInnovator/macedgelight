@@ -7,23 +7,40 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA000001 /* MacEdgeLightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100001; };
-		AA000002 /* EdgeLightOverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100002; };
-		AA000003 /* EdgeLightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100003; };
-		AA000004 /* ControlPanelWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100004; };
-		AA000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100005; };
-		AA000006 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100006; };
-		AA000007 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100007; };
-		AA000008 /* MonitorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100008; };
-		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA100009; };
-		AA000010 /* EdgeLightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100010; };
-		AA000011 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100011; };
-		AA000012 /* MagnifierWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100012; };
-		AA000013 /* DisplayBrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100013; };
-		AA000014 /* EDRInfoWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014; };
+		72635B82C8B264AE78C1333F /* SafeGammaScaleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8F19F561914C1F238A0E0AF /* SafeGammaScaleTests.swift */; };
+		AA000001 /* MacEdgeLightApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100001 /* MacEdgeLightApp.swift */; };
+		AA000002 /* EdgeLightOverlayWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100002 /* EdgeLightOverlayWindow.swift */; };
+		AA000003 /* EdgeLightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100003 /* EdgeLightView.swift */; };
+		AA000004 /* ControlPanelWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100004 /* ControlPanelWindow.swift */; };
+		AA000005 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100005 /* StatusBarController.swift */; };
+		AA000006 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100006 /* AppSettings.swift */; };
+		AA000007 /* HotkeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100007 /* HotkeyManager.swift */; };
+		AA000008 /* MonitorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100008 /* MonitorManager.swift */; };
+		AA000009 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA100009 /* Assets.xcassets */; };
+		AA000010 /* EdgeLightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100010 /* EdgeLightManager.swift */; };
+		AA000011 /* LoginItemManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100011 /* LoginItemManager.swift */; };
+		AA000012 /* MagnifierWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100012 /* MagnifierWindow.swift */; };
+		AA000013 /* DisplayBrightnessManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100013 /* DisplayBrightnessManager.swift */; };
+		AA000014 /* EDRInfoWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA100014 /* EDRInfoWindow.swift */; };
+		B8F620425082F0D4BCB1BAB1 /* PanicTapDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6E811B20D29537E09CCB9B /* PanicTapDetectorTests.swift */; };
+		C14DB281C55BDE774741AE14 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E93B336740BBEF999E2ADBE /* Cocoa.framework */; };
+		E008F31894870E46EEAF14C2 /* AppSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3439515C27107B76370643 /* AppSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		108771174FD459BA292C4CCD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA700001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA400001;
+			remoteInfo = MacEdgeLight;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		5B3439515C27107B76370643 /* AppSettingsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSettingsTests.swift; sourceTree = "<group>"; };
+		7161FC1404A688E12899C1F6 /* MacEdgeLightTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacEdgeLightTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E93B336740BBEF999E2ADBE /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		AA100001 /* MacEdgeLightApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacEdgeLightApp.swift; sourceTree = "<group>"; };
 		AA100002 /* EdgeLightOverlayWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EdgeLightOverlayWindow.swift; sourceTree = "<group>"; };
 		AA100003 /* EdgeLightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EdgeLightView.swift; sourceTree = "<group>"; };
@@ -41,9 +58,19 @@
 		AA100020 /* MacEdgeLight.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacEdgeLight.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA100030 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA100031 /* MacEdgeLight.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MacEdgeLight.entitlements; sourceTree = "<group>"; };
+		BE6E811B20D29537E09CCB9B /* PanicTapDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PanicTapDetectorTests.swift; sourceTree = "<group>"; };
+		F8F19F561914C1F238A0E0AF /* SafeGammaScaleTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafeGammaScaleTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6D60747D5FEB42AB8321967E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C14DB281C55BDE774741AE14 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA200001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -54,11 +81,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8391E2DF41FDC683A762EABF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F596AB167B1FEFC0D7B46B2D /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A85F8D56A817F8102A813F9F /* MacEdgeLightTests */ = {
+			isa = PBXGroup;
+			children = (
+				5B3439515C27107B76370643 /* AppSettingsTests.swift */,
+				BE6E811B20D29537E09CCB9B /* PanicTapDetectorTests.swift */,
+				F8F19F561914C1F238A0E0AF /* SafeGammaScaleTests.swift */,
+			);
+			name = MacEdgeLightTests;
+			path = MacEdgeLightTests;
+			sourceTree = "<group>";
+		};
 		AA300001 = {
 			isa = PBXGroup;
 			children = (
 				AA300002 /* MacEdgeLight */,
 				AA300003 /* Products */,
+				8391E2DF41FDC683A762EABF /* Frameworks */,
+				A85F8D56A817F8102A813F9F /* MacEdgeLightTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -89,13 +137,40 @@
 			isa = PBXGroup;
 			children = (
 				AA100020 /* MacEdgeLight.app */,
+				7161FC1404A688E12899C1F6 /* MacEdgeLightTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F596AB167B1FEFC0D7B46B2D /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				9E93B336740BBEF999E2ADBE /* Cocoa.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		65347103B5A6F4E6708CD557 /* MacEdgeLightTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4067599A58F08ED93706EDD2 /* Build configuration list for PBXNativeTarget "MacEdgeLightTests" */;
+			buildPhases = (
+				1845B94D84FDD8A80CF08E10 /* Sources */,
+				6D60747D5FEB42AB8321967E /* Frameworks */,
+				98F0E7D364BD0131A1189718 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A31447C0680B46F706408F9B /* PBXTargetDependency */,
+			);
+			name = MacEdgeLightTests;
+			productName = MacEdgeLightTests;
+			productReference = 7161FC1404A688E12899C1F6 /* MacEdgeLightTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		AA400001 /* MacEdgeLight */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA600001 /* Build configuration list for PBXNativeTarget "MacEdgeLight" */;
@@ -137,11 +212,19 @@
 			projectRoot = "";
 			targets = (
 				AA400001 /* MacEdgeLight */,
+				65347103B5A6F4E6708CD557 /* MacEdgeLightTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		98F0E7D364BD0131A1189718 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA500002 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -153,6 +236,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		1845B94D84FDD8A80CF08E10 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E008F31894870E46EEAF14C2 /* AppSettingsTests.swift in Sources */,
+				B8F620425082F0D4BCB1BAB1 /* PanicTapDetectorTests.swift in Sources */,
+				72635B82C8B264AE78C1333F /* SafeGammaScaleTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA500001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -175,7 +268,34 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		A31447C0680B46F706408F9B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MacEdgeLight;
+			target = AA400001 /* MacEdgeLight */;
+			targetProxy = 108771174FD459BA292C4CCD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		A5340F9191E70792838203E6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacEdgeLightTests;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelighttests;
+				PRODUCT_MODULE_NAME = MacEdgeLightTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacEdgeLight.app/Contents/MacOS/MacEdgeLight";
+			};
+			name = Release;
+		};
 		AA800001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -193,12 +313,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelight;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
 			};
 			name = Debug;
 		};
@@ -219,12 +339,12 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelight;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
 			};
 			name = Release;
 		};
@@ -342,9 +462,36 @@
 			};
 			name = Release;
 		};
+		E0FD9AEBAB77554C57CC4566 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = MacEdgeLightTests;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.richardcrane.macedgelighttests;
+				PRODUCT_MODULE_NAME = MacEdgeLightTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacEdgeLight.app/Contents/MacOS/MacEdgeLight";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4067599A58F08ED93706EDD2 /* Build configuration list for PBXNativeTarget "MacEdgeLightTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5340F9191E70792838203E6 /* Release */,
+				E0FD9AEBAB77554C57CC4566 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AA600001 /* Build configuration list for PBXNativeTarget "MacEdgeLight" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -364,7 +511,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = AA700001 /* Project object */;
 }
