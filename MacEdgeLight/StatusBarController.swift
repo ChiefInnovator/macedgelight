@@ -7,6 +7,7 @@ class StatusBarController {
     private var launchAtLoginItem: NSMenuItem?
     private var menuBarModeItem: NSMenuItem?
     private var edrToggleItem: NSMenuItem?
+    private var desktopIconsItem: NSMenuItem?
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
@@ -24,6 +25,7 @@ class StatusBarController {
 
     private func setupMenu() {
         let menu = NSMenu()
+        menu.autoenablesItems = false
 
         menu.addItem(NSMenuItem(title: "Keyboard Shortcuts", action: #selector(showHelp), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
@@ -45,14 +47,17 @@ class StatusBarController {
         menu.addItem(NSMenuItem(title: "Cursor Reveal", action: #selector(toggleCursorReveal), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Magnifier", action: #selector(toggleMagnifier), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Show in Screen Capture", action: #selector(toggleScreenCapture), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Hide Desktop Icons", action: #selector(toggleDesktopIcons), keyEquivalent: ""))
-        if DisplayBrightnessManager.shared.isAvailable {
-            let edrItem = NSMenuItem(title: "Display Brightness Boost", action: #selector(toggleDisplayBrightness), keyEquivalent: "")
-            edrItem.target = self
-            edrItem.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
-            edrToggleItem = edrItem
-            menu.addItem(edrItem)
-        }
+        let desktopItem = NSMenuItem(title: desktopIconsTitle(), action: #selector(toggleDesktopIcons), keyEquivalent: "")
+        desktopIconsItem = desktopItem
+        menu.addItem(desktopItem)
+        let supported = DisplayBrightnessManager.shared.isAvailable
+        let edrTitle = supported ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
+        let edrItem = NSMenuItem(title: edrTitle, action: #selector(toggleDisplayBrightness), keyEquivalent: "")
+        edrItem.target = self
+        edrItem.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
+        edrItem.isEnabled = supported
+        edrToggleItem = edrItem
+        menu.addItem(edrItem)
         menu.addItem(NSMenuItem.separator())
 
         let toggleControls = NSMenuItem(title: "Hide Controls", action: #selector(toggleControls), keyEquivalent: "")
@@ -170,12 +175,20 @@ class StatusBarController {
         edgeLightManager?.toggleDesktopIcons()
     }
 
+    private func desktopIconsTitle() -> String {
+        AppSettings.shared.desktopIconsHidden ? "Show Desktop Icons" : "Hide Desktop Icons"
+    }
+
     @objc private func toggleDisplayBrightness() {
         edgeLightManager?.toggleDisplayBrightness()
     }
 
     func updateEDRMenuState() {
         edrToggleItem?.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
+    }
+
+    func updateDesktopIconsMenuTitle() {
+        desktopIconsItem?.title = desktopIconsTitle()
     }
 
     @objc private func toggleControls() {

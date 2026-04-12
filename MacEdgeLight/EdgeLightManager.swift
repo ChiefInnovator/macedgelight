@@ -53,7 +53,8 @@ class EdgeLightManager {
         hotkeyManager.register(
             toggle: { [weak self] in self?.toggleLight() },
             brightnessUp: { [weak self] in self?.increaseBrightness() },
-            brightnessDown: { [weak self] in self?.decreaseBrightness() }
+            brightnessDown: { [weak self] in self?.decreaseBrightness() },
+            emergencyDisable: { [weak self] in self?.emergencyDisableDisplayBrightness() }
         )
 
         // Restore magnifier state
@@ -194,6 +195,7 @@ class EdgeLightManager {
         }
         monitorManager.applySettingsToAll()
         controlPanel?.updateToggleStates()
+        statusBar?.updateDesktopIconsMenuTitle()
     }
 
     func cycleMenuBarMode() {
@@ -227,6 +229,7 @@ class EdgeLightManager {
         killall.arguments = ["Finder"]
         try? killall.run()
         controlPanel?.updateToggleStates()
+        statusBar?.updateDesktopIconsMenuTitle()
     }
 
     // MARK: - Display Brightness Boost
@@ -234,6 +237,15 @@ class EdgeLightManager {
     func toggleDisplayBrightness() {
         DisplayBrightnessManager.shared.toggle()
         settings.edrBoosted = DisplayBrightnessManager.shared.isBoosted
+        controlPanel?.updateToggleStates()
+        statusBar?.updateEDRMenuState()
+    }
+
+    /// Panic off — five Option taps force-disable the EDR boost.
+    func emergencyDisableDisplayBrightness() {
+        guard DisplayBrightnessManager.shared.isBoosted else { return }
+        DisplayBrightnessManager.shared.toggle()
+        settings.edrBoosted = false
         controlPanel?.updateToggleStates()
         statusBar?.updateEDRMenuState()
     }

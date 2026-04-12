@@ -7,17 +7,25 @@ class HotkeyManager {
     private var toggleAction: HotkeyAction?
     private var brightnessUpAction: HotkeyAction?
     private var brightnessDownAction: HotkeyAction?
+    private var emergencyDisableAction: HotkeyAction?
     private var globalMonitor: Any?
     private var localMonitor: Any?
+
+    // Panic tap detection: 5 unmodified "O" key taps within 2s disables EDR boost
+    private var panicTapTimes: [TimeInterval] = []
+    private let panicTapCount = 5
+    private let panicTapWindow: TimeInterval = 2.0
 
     func register(
         toggle: @escaping HotkeyAction,
         brightnessUp: @escaping HotkeyAction,
-        brightnessDown: @escaping HotkeyAction
+        brightnessDown: @escaping HotkeyAction,
+        emergencyDisable: @escaping HotkeyAction
     ) {
         self.toggleAction = toggle
         self.brightnessUpAction = brightnessUp
         self.brightnessDownAction = brightnessDown
+        self.emergencyDisableAction = emergencyDisable
 
         // Global monitor catches events when app is NOT focused
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -31,13 +39,25 @@ class HotkeyManager {
             }
             return event
         }
+
     }
 
     @discardableResult
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        let requiredFlags: NSEvent.ModifierFlags = [.command, .shift]
 
+        // Panic disable: 5 unmodified "O" taps in 2s. Ignore auto-repeat.
+        if event.keyCode == UInt16(kVK_ANSI_O) && flags.isEmpty && !event.isARepeat {
+            let now = Date().timeIntervalSinceReferenceDate
+            panicTapTimes.append(now)
+            panicTapTimes.removeAll { now - $0 > panicTapWindow }
+            if panicTapTimes.count >= panicTapCount {
+                panicTapTimes.removeAll()
+                emergencyDisableAction?()
+            }
+        }
+
+        let requiredFlags: NSEvent.ModifierFlags = [.command, .shift]
         guard flags.contains(requiredFlags) else { return false }
 
         switch event.keyCode {

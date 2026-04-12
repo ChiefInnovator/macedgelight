@@ -39,6 +39,16 @@ class DisplayBrightnessManager {
     /// (unlike power curves which compress midtones).
     private let gammaScale: Float = 1.45
 
+    /// Never exceed this fraction of actual current headroom when applying
+    /// gamma boost. Leaves margin for sudden drops (thermal throttling,
+    /// auto-brightness) so content doesn't clip to white.
+    private let gammaHeadroomSafety: Float = 0.85
+
+    /// Currently applied gamma scale — tracked so we only re-upload the LUT
+    /// when headroom changes meaningfully.
+    private var currentAppliedGammaScale: Float = 1.0
+    private var lastGammaUpdate: TimeInterval = 0
+
     // DisplayServices function pointers
     private typealias GetBrightnessFn = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
     private typealias SetBrightnessFn = @convention(c) (CGDirectDisplayID, Float) -> Int32
@@ -156,28 +166,66 @@ class DisplayBrightnessManager {
             guard CGGetDisplayTransferByTable(displayID, sampleCount, &red, &green, &blue, &actualCount) == .success,
                   actualCount > 1 else { continue }
 
-            // Save original tables
             savedGammaTables[displayID] = (
                 red: Array(red[0..<Int(actualCount)]),
                 green: Array(green[0..<Int(actualCount)]),
                 blue: Array(blue[0..<Int(actualCount)]),
             )
+        }
 
-            // Linear scale: maps 0-1 into 0-gammaScale, pushing values into
-            // the EDR range. Preserves relative contrast between tones —
-            // blacks stay black, everything else gets proportionally brighter.
-            let count = Int(actualCount)
+        // Start at a safe scale based on the current available headroom,
+        // then let adjustGammaForHeadroom() track live changes.
+        let initialScale = safeGammaScale()
+        applyGammaScale(initialScale)
+        currentAppliedGammaScale = initialScale
+    }
+
+    /// Re-uploads the gamma LUT with the given linear scale applied on top of
+    /// the saved originals. Blacks stay at 0, everything else scales linearly.
+    private func applyGammaScale(_ scale: Float) {
+        for (displayID, tables) in savedGammaTables {
+            let count = tables.red.count
             var boostedRed = [CGGammaValue](repeating: 0, count: count)
             var boostedGreen = [CGGammaValue](repeating: 0, count: count)
             var boostedBlue = [CGGammaValue](repeating: 0, count: count)
-
             for i in 0..<count {
-                boostedRed[i] = red[i] * gammaScale
-                boostedGreen[i] = green[i] * gammaScale
-                boostedBlue[i] = blue[i] * gammaScale
+                boostedRed[i] = tables.red[i] * scale
+                boostedGreen[i] = tables.green[i] * scale
+                boostedBlue[i] = tables.blue[i] * scale
             }
-
             CGSetDisplayTransferByTable(displayID, UInt32(count), boostedRed, boostedGreen, boostedBlue)
+        }
+    }
+
+    /// Clamp the desired gamma scale to what the display can currently
+    /// sustain, using the minimum live headroom across EDR screens with a
+    /// safety margin. Never returns below 1.0 (neutral).
+    private func safeGammaScale() -> Float {
+        let edrScreens = NSScreen.screens.filter {
+            $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
+        }
+        guard !edrScreens.isEmpty else { return 1.0 }
+        let minHeadroom = edrScreens
+            .map { Float($0.maximumExtendedDynamicRangeColorComponentValue) }
+            .min() ?? 1.0
+        let headroomCeiling = max(1.0, minHeadroom * gammaHeadroomSafety)
+        return min(gammaScale, headroomCeiling)
+    }
+
+    /// Called from the display link every frame; throttled to ~2 Hz. When
+    /// available headroom drifts (thermal throttling, ambient light change,
+    /// True Tone), re-upload the gamma LUT so content doesn't clip.
+    private func adjustGammaForHeadroom() {
+        let now = Date().timeIntervalSinceReferenceDate
+        guard now - lastGammaUpdate > 0.5 else { return }
+
+        let target = safeGammaScale()
+        guard abs(target - currentAppliedGammaScale) > 0.02 else { return }
+
+        lastGammaUpdate = now
+        currentAppliedGammaScale = target
+        DispatchQueue.main.async { [weak self] in
+            self?.applyGammaScale(target)
         }
     }
 
@@ -187,6 +235,8 @@ class DisplayBrightnessManager {
             CGSetDisplayTransferByTable(displayID, UInt32(count), tables.red, tables.green, tables.blue)
         }
         savedGammaTables.removeAll()
+        currentAppliedGammaScale = 1.0
+        lastGammaUpdate = 0
     }
 
     // MARK: - Display link
@@ -339,6 +389,7 @@ class DisplayBrightnessManager {
             let headroom = min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
             renderFrame(metalLayer: layer, brightness: headroom, queue: queue)
         }
+        adjustGammaForHeadroom()
     }
 
     private func renderFrame(metalLayer: CAMetalLayer, brightness: Double, queue: MTLCommandQueue) {
