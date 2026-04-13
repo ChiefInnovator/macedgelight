@@ -76,6 +76,28 @@ class MonitorManager {
         if settings.currentMonitorIndex >= screens.count {
             settings.currentMonitorIndex = 0
         }
+
+        // didChangeScreenParameters also fires for gamma / color profile
+        // tweaks. If the actual set of displays hasn't changed, just resize
+        // existing overlays instead of tearing everything down — recreating
+        // on every notification leaks NSWindows into the window server.
+        let currentIDs = overlayWindows.compactMap { $0.screen?.displayID }
+        let expectedIDs: [CGDirectDisplayID] = settings.showOnAllMonitors
+            ? screens.map { $0.displayID }
+            : {
+                let idx = max(0, min(settings.currentMonitorIndex, screens.count - 1))
+                return screens.indices.contains(idx) ? [screens[idx].displayID] : []
+            }()
+
+        if currentIDs == expectedIDs && !currentIDs.isEmpty {
+            for window in overlayWindows {
+                if let screen = window.screen {
+                    window.updateForScreen(screen)
+                }
+            }
+            return
+        }
+
         createOverlays()
     }
 }

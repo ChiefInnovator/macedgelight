@@ -97,7 +97,7 @@ class ControlPanelWindow: NSPanel {
 
     private func setupUI() {
         let container = DraggableVisualEffectView(frame: NSRect(x: 0, y: 0, width: 100, height: 52))
-        container.material = .dark
+        container.material = .hudWindow
         container.state = .active
         container.blendingMode = .behindWindow
         container.wantsLayer = true
@@ -283,6 +283,7 @@ class ControlPanelWindow: NSPanel {
 
             let tip = NSWindow(contentRect: NSRect(x: 0, y: 0, width: w, height: h),
                                styleMask: .borderless, backing: .buffered, defer: false)
+            tip.isReleasedWhenClosed = false
             tip.isOpaque = false
             tip.backgroundColor = NSColor(white: 0, alpha: 0.85)
             tip.level = NSWindow.Level(rawValue: self.level.rawValue + 1)
@@ -297,7 +298,7 @@ class ControlPanelWindow: NSPanel {
             tip.setFrameOrigin(NSPoint(x: windowPoint.x - w / 2, y: self.frame.maxY + 4))
 
             tip.orderFront(nil)
-            self.tooltipWindow?.orderOut(nil)
+            self.tooltipWindow?.close()
             self.tooltipWindow = tip
         }
     }
@@ -305,7 +306,7 @@ class ControlPanelWindow: NSPanel {
     private func hideTooltip() {
         tooltipTimer?.invalidate()
         tooltipTimer = nil
-        tooltipWindow?.orderOut(nil)
+        tooltipWindow?.close()
         tooltipWindow = nil
     }
 
