@@ -11,6 +11,8 @@ class EdgeLightManager {
     private var screenChangeObserver: Any?
     private var willSleepObserver: Any?
     private var didWakeObserver: Any?
+    private var screenLockObserver: Any?
+    private var screenUnlockObserver: Any?
 
     private let brightnessStep = 0.15
     private let brightnessStepFine = 0.025
@@ -60,6 +62,7 @@ class EdgeLightManager {
             toggle: { [weak self] in self?.toggleLight() },
             brightnessUp: { [weak self] in self?.increaseBrightness() },
             brightnessDown: { [weak self] in self?.decreaseBrightness() },
+            boost: { [weak self] in self?.toggleDisplayBrightness() },
             panicQuit: { NSApp.terminate(nil) }
         )
 
@@ -120,6 +123,32 @@ class EdgeLightManager {
                 self.statusBar?.updateEDRMenuState()
             }
         }
+
+        // Lock screen: mirror the sleep/wake pattern. On lock the display
+        // context changes enough that we'd rather drop the boost cleanly and
+        // re-engage on unlock than leave a scaled LUT loaded while the login
+        // window is in charge of the screen.
+        let distributedCenter = DistributedNotificationCenter.default()
+        screenLockObserver = distributedCenter.addObserver(
+            forName: Notification.Name("com.apple.screenIsLocked"),
+            object: nil, queue: .main
+        ) { _ in
+            if DisplayBrightnessManager.shared.isBoosted {
+                DisplayBrightnessManager.shared.toggle()
+            }
+        }
+        screenUnlockObserver = distributedCenter.addObserver(
+            forName: Notification.Name("com.apple.screenIsUnlocked"),
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            guard let self,
+                  self.settings.edrBoosted,
+                  DisplayBrightnessManager.shared.isAvailable,
+                  !DisplayBrightnessManager.shared.isBoosted else { return }
+            DisplayBrightnessManager.shared.toggle()
+            self.controlPanel?.updateToggleStates()
+            self.statusBar?.updateEDRMenuState()
+        }
     }
 
     func stop() {
@@ -140,6 +169,15 @@ class EdgeLightManager {
         if let observer = didWakeObserver {
             workspaceCenter.removeObserver(observer)
             didWakeObserver = nil
+        }
+        let distributedCenter = DistributedNotificationCenter.default()
+        if let observer = screenLockObserver {
+            distributedCenter.removeObserver(observer)
+            screenLockObserver = nil
+        }
+        if let observer = screenUnlockObserver {
+            distributedCenter.removeObserver(observer)
+            screenUnlockObserver = nil
         }
     }
 

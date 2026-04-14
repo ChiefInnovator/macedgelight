@@ -60,4 +60,46 @@ final class SafeGammaScaleTests: XCTestCase {
         )
         XCTAssertEqual(result, 1.7, accuracy: 0.0001)
     }
+
+    // MARK: - buildBoostedRamp
+
+    func testBuildBoostedRampStartsAtZero() {
+        let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 256)
+        XCTAssertEqual(ramp.first, 0.0)
+    }
+
+    func testBuildBoostedRampEndsAtScale() {
+        let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 256)
+        XCTAssertEqual(ramp.last!, 1.45, accuracy: 0.0001)
+    }
+
+    func testBuildBoostedRampIdentityAtScaleOne() {
+        let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: 1.0, count: 256)
+        XCTAssertEqual(ramp.count, 256)
+        XCTAssertEqual(ramp.first, 0.0)
+        XCTAssertEqual(ramp.last!, 1.0, accuracy: 0.0001)
+        XCTAssertEqual(ramp[127], 127.0 / 255.0, accuracy: 0.0001)
+    }
+
+    func testBuildBoostedRampIsMonotonic() {
+        let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 256)
+        for i in 1..<ramp.count {
+            XCTAssertGreaterThan(ramp[i], ramp[i - 1])
+        }
+    }
+
+    // A freshly built ramp never depends on prior LUT state — guards the
+    // double-scale regression where saveAndBoostGamma read back an already
+    // scaled table and multiplied again, clipping midtones to white.
+    func testBuildBoostedRampIsDeterministic() {
+        let a = DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 256)
+        let b = DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 256)
+        XCTAssertEqual(a, b)
+    }
+
+    func testBuildBoostedRampCountZero() {
+        XCTAssertTrue(
+            DisplayBrightnessManager.buildBoostedRamp(scale: 1.45, count: 0).isEmpty
+        )
+    }
 }

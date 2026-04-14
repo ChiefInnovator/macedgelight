@@ -26,7 +26,6 @@ class DisplayBrightnessManager {
     private var screenObserver: NSObjectProtocol?
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
-    private var savedGammaTables: [CGDirectDisplayID: (red: [CGGammaValue], green: [CGGammaValue], blue: [CGGammaValue])] = [:]
 
     /// Maximum EDR headroom requested from macOS via the invisible Metal overlay.
     /// The overlay is not visible — it only signals macOS to grant headroom.
@@ -83,7 +82,9 @@ class DisplayBrightnessManager {
         // always animates brightness changes over ~300-500ms, which makes
         // the toggle feel mushy. The gamma LUT + EDR headroom deliver the
         // perceptible boost and both apply within a single compositor frame.
-        saveAndBoostGamma()
+        let initialScale = safeGammaScale()
+        applyGammaScale(initialScale)
+        currentAppliedGammaScale = initialScale
         createOverlays()
         startDisplayLink()
         isBoosted = true
@@ -94,9 +95,13 @@ class DisplayBrightnessManager {
         isChanging = true
         isBoosted = false
 
-        // Gamma LUT revert is instant — do it first so the 1.45x scale
-        // disappears within the next compositor frame.
-        restoreGamma()
+        // Ask macOS to re-apply the user's ColorSync profile. This is the
+        // authoritative clean state — no saved LUT to read back, no risk of
+        // writing stale values, no way for a crash or sleep cycle to leave
+        // our saved copy out of sync with what's actually loaded.
+        Self.resetGammaToProfile()
+        currentAppliedGammaScale = 1.0
+        lastGammaUpdate = 0
 
         // Kill EDR signaling synchronously. Previously these ran async and
         // macOS held EDR headroom for ~500ms while the display link drained,
@@ -123,49 +128,32 @@ class DisplayBrightnessManager {
 
     // MARK: - Gamma table boost
 
-    private func saveAndBoostGamma() {
-        savedGammaTables.removeAll()
-        let sampleCount: UInt32 = 256
-
-        for screen in NSScreen.screens {
-            let displayID = screen.displayID
-            var red = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-            var green = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-            var blue = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-            var actualCount: UInt32 = 0
-
-            guard CGGetDisplayTransferByTable(displayID, sampleCount, &red, &green, &blue, &actualCount) == .success,
-                  actualCount > 1 else { continue }
-
-            savedGammaTables[displayID] = (
-                red: Array(red[0..<Int(actualCount)]),
-                green: Array(green[0..<Int(actualCount)]),
-                blue: Array(blue[0..<Int(actualCount)]),
+    /// Writes a synthetic linear gamma ramp scaled by the given factor to every
+    /// EDR-capable display. Blacks stay at 0; values above `1/scale` stretch
+    /// past 1.0 into EDR range where the headroom overlay makes them visible.
+    ///
+    /// Unlike the previous implementation, this never reads back the live LUT,
+    /// so it can't be poisoned by a dirty table left behind by a crashed run
+    /// or an interrupted sleep cycle. Deactivation calls
+    /// `CGDisplayRestoreColorSyncSettings`, which asks macOS to re-apply the
+    /// user's ColorSync profile directly — no saved state to desync.
+    private func applyGammaScale(_ scale: Float) {
+        let count = 256
+        let ramp = Self.buildBoostedRamp(scale: scale, count: count)
+        for screen in NSScreen.screens
+            where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
+            CGSetDisplayTransferByTable(
+                screen.displayID, UInt32(count), ramp, ramp, ramp
             )
         }
-
-        // Start at a safe scale based on the current available headroom,
-        // then let adjustGammaForHeadroom() track live changes.
-        let initialScale = safeGammaScale()
-        applyGammaScale(initialScale)
-        currentAppliedGammaScale = initialScale
     }
 
-    /// Re-uploads the gamma LUT with the given linear scale applied on top of
-    /// the saved originals. Blacks stay at 0, everything else scales linearly.
-    private func applyGammaScale(_ scale: Float) {
-        for (displayID, tables) in savedGammaTables {
-            let count = tables.red.count
-            var boostedRed = [CGGammaValue](repeating: 0, count: count)
-            var boostedGreen = [CGGammaValue](repeating: 0, count: count)
-            var boostedBlue = [CGGammaValue](repeating: 0, count: count)
-            for i in 0..<count {
-                boostedRed[i] = tables.red[i] * scale
-                boostedGreen[i] = tables.green[i] * scale
-                boostedBlue[i] = tables.blue[i] * scale
-            }
-            CGSetDisplayTransferByTable(displayID, UInt32(count), boostedRed, boostedGreen, boostedBlue)
-        }
+    /// Pure function, exposed for tests. Builds a linear ramp from 0 up to
+    /// `scale` across `count` samples. At scale 1.0 this is the identity ramp.
+    static func buildBoostedRamp(scale: Float, count: Int) -> [CGGammaValue] {
+        guard count > 1 else { return [] }
+        let denom = Float(count - 1)
+        return (0..<count).map { Float($0) / denom * scale }
     }
 
     /// Clamp the desired gamma scale to what the display can currently
@@ -206,16 +194,6 @@ class DisplayBrightnessManager {
         DispatchQueue.main.async { [weak self] in
             self?.applyGammaScale(target)
         }
-    }
-
-    private func restoreGamma() {
-        for (displayID, tables) in savedGammaTables {
-            let count = tables.red.count
-            CGSetDisplayTransferByTable(displayID, UInt32(count), tables.red, tables.green, tables.blue)
-        }
-        savedGammaTables.removeAll()
-        currentAppliedGammaScale = 1.0
-        lastGammaUpdate = 0
     }
 
     // MARK: - Display link

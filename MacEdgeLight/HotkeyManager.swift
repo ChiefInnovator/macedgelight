@@ -26,6 +26,7 @@ class HotkeyManager {
     private var toggleAction: HotkeyAction?
     private var brightnessUpAction: HotkeyAction?
     private var brightnessDownAction: HotkeyAction?
+    private var boostAction: HotkeyAction?
     private var panicQuitAction: HotkeyAction?
     private var globalMonitor: Any?
     private var localMonitor: Any?
@@ -37,11 +38,13 @@ class HotkeyManager {
         toggle: @escaping HotkeyAction,
         brightnessUp: @escaping HotkeyAction,
         brightnessDown: @escaping HotkeyAction,
+        boost: @escaping HotkeyAction,
         panicQuit: @escaping HotkeyAction
     ) {
         self.toggleAction = toggle
         self.brightnessUpAction = brightnessUp
         self.brightnessDownAction = brightnessDown
+        self.boostAction = boost
         self.panicQuitAction = panicQuit
 
         // Global monitor catches events when app is NOT focused
@@ -76,6 +79,9 @@ class HotkeyManager {
         switch event.keyCode {
         case UInt16(kVK_ANSI_L): // Cmd+Shift+L
             toggleAction?()
+            return true
+        case UInt16(kVK_ANSI_B): // Cmd+Shift+B
+            boostAction?()
             return true
         case UInt16(kVK_UpArrow): // Cmd+Shift+Up
             brightnessUpAction?()
