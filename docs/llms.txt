@@ -1,0 +1,34 @@
+# MacEdgeLight
+
+> A free macOS menu bar utility that wraps your screen in a customizable ambient glow, with an XDR brightness boost for HDR displays. Native Swift/AppKit, under 5 MB, no dependencies, no telemetry. Useful as a software ring light for streaming and video calls, a presentation spotlight, a low-vision accessibility tool, and a focus aid for late-night work.
+
+MacEdgeLight is developed by Richard Crane and distributed under the PolyForm Strict 1.0.0 license (noncommercial use, no redistribution or modification). It is inspired by Scott Hanselman's Windows Edge Light but is a native macOS reimplementation — no shared code. Minimum OS is macOS 13 Ventura; builds are universal (arm64 + x86_64). The app is not sandboxed because it needs unrestricted overlay-window and display-control capabilities.
+
+The current release is v2.1.0. Downloads (DMG and zip) are published on GitHub Releases.
+
+## Project
+
+- [Landing page](https://chiefinnovator.github.io/macedgelight/): Marketing site with features, screenshots, and install instructions.
+- [GitHub repository](https://github.com/ChiefInnovator/macedgelight): Source code, issue tracker, and release notes.
+- [Releases](https://github.com/ChiefInnovator/macedgelight/releases): Signed DMG and zip downloads for every version.
+- [License (PolyForm Strict 1.0.0)](https://github.com/ChiefInnovator/macedgelight/blob/main/LICENSE.txt): Noncommercial use only; no redistribution or modification.
+
+## Documentation
+
+- [README](https://github.com/ChiefInnovator/macedgelight/blob/main/README.md): Feature overview, use cases, comparison against physical ring lights, and quick-start guide.
+- [Technical specification](https://chiefinnovator.github.io/macedgelight/SPEC.md): Full architecture — modules, rendering pipeline, settings flow, XDR boost implementation, hotkeys.
+- [Apple EDR and HDR brightness guide](https://chiefinnovator.github.io/macedgelight/Apple_EDR_HDR_Display_Brightness_Guide.md): Background on how macOS exposes extended dynamic range headroom and how MacEdgeLight drives it.
+
+## Features
+
+- Ambient glow border with configurable color, color temperature, width, bloom, inner/outer glow, and animation.
+- Per-monitor control — light one display or all of them, cycle between them with a hotkey.
+- XDR brightness boost: pushes compatible Liquid Retina XDR and Pro Display XDR panels past their SDR ceiling using an invisible Metal EDR overlay plus a synthetic gamma ramp (`gammaScale` = 1.45x). Bypassed cleanly on sleep, wake, lock, and unlock so displays never get stuck bright.
+- Menu bar icon and floating HUD control panel, with hold-to-repeat buttons for fine adjustment.
+- Global hotkeys: Cmd+Shift+L (toggle light), Cmd+Shift+Up/Down (brightness), Cmd+Shift+B (XDR boost).
+- Launch at login via SMAppService, capture-excludable overlay windows (the glow can be shown or hidden to screen recorders).
+- Cursor cutout, desktop-icon hiding, and a magnifier loupe for presentations and demos.
+
+## Accessibility
+
+MacEdgeLight is explicitly positioned as a low-vision accessibility tool. The XDR brightness boost can make screen content significantly easier to see on supported displays, and the ambient glow provides a high-contrast visual frame around the screen. The app ships with no ads, no subscriptions, and no data collection.
