@@ -254,6 +254,10 @@ Buttons are split into two groups separated by a thin vertical divider:
 
 **Always-active**: toggle light, XDR brightness, magnifier, desktop icons, launch at login, reset, quit
 
+All boolean menu toggles show ON/OFF and checkmarks from the current settings: ring light, all monitors, cursor reveal, magnifier, screen capture, hidden desktop icons, controls visibility, and Launch at Login. Boost distinguishes ON, OFF, unsupported, and WAITING; a pending request stays cancellable. Menu-bar mode names Below/Extend/Auto explicitly. The status bar bulb uses filled/outline icons and an ON/OFF tooltip for the ring light.
+
+Menu state refreshes after settings changes and when opening the menu, so startup, toolbar/keyboard actions, and resets stay synchronized. Light-dependent menu commands follow the toolbar's enabled state. Toolbar toggles expose state through their icons, ON/OFF tooltips, button state, and accessibility values. Boost exposes WAITING while recovering. Launch at Login reads actual system registration after a request and when opening the menu. Reset hides the magnifier window as well as clearing its setting.
+
 ### Button Types
 
 - **NSButton** — Standard click buttons (toggle light, monitors, quit, etc.)

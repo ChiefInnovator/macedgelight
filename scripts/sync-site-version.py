@@ -8,9 +8,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FILES = ("docs/index.html", "docs/llms.txt", "README.md")
 NUMBER = r"\d+\.\d+(?:\.\d+)?"
 PATTERNS = (
-    rf"((?:MacEdgeLight |version:? |new in |Download ))({NUMBER})(?![\d.])",
-    rf"(/releases/(?:tag|download)/v)({NUMBER})(?![\d.])",
-    rf'("softwareVersion"\s*:\s*")({NUMBER})(?![\d.])',
+    rf"((?:MacEdgeLight |version:? |new in |Download ))({NUMBER})(?!\d|\.\d)",
+    rf"(/releases/(?:tag|download)/v)({NUMBER})(?!\d|\.\d)",
+    rf'("softwareVersion"\s*:\s*")({NUMBER})(?!\d|\.\d)',
     rf"(\[)({NUMBER})(?= DMG\])",
 )
 

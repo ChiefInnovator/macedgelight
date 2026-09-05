@@ -326,8 +326,6 @@ class ControlPanelWindow: NSPanel {
                   onIcon: "video.fill", offIcon: "video.slash")
         setToggle("eye.slash", active: settings.desktopIconsHidden,
                   onIcon: "eye.slash", offIcon: "eye")
-        toggleButtons["eye.slash"]?.toolTip = settings.desktopIconsHidden
-            ? "Show Desktop Icons" : "Hide Desktop Icons"
         setToggle("sun.max.trianglebadge.exclamationmark", active: settings.edrBoosted,
                   onIcon: "sun.max.fill", offIcon: "sun.max")
         if let edrButton = toggleButtons["sun.max.trianglebadge.exclamationmark"] {
@@ -337,8 +335,11 @@ class ControlPanelWindow: NSPanel {
             if let message = edgeLightManager?.boostRecoveryMessage {
                 edrButton.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: message)
                 edrButton.toolTip = "Display Brightness Boost — \(message)"
+                edrButton.setAccessibilityValue("WAITING: \(message)")
             } else {
-                edrButton.toolTip = supported ? "Display Brightness Boost" : "Display Brightness Boost — Display not supported"
+                edrButton.toolTip = supported
+                    ? "Display Brightness Boost — \(settings.edrBoosted ? "ON" : "OFF")"
+                    : "Display Brightness Boost — OFF (Not Supported)"
             }
         }
 
@@ -377,6 +378,16 @@ class ControlPanelWindow: NSPanel {
 
     private func setToggle(_ key: String, active: Bool, onIcon: String, offIcon: String) {
         guard let button = toggleButtons[key] else { return }
+        let labels = ["lightbulb": "Toggle Light (Cmd+Shift+L)", "display.2": "All Monitors",
+                      "circle.dashed": "Cursor Reveal", "plus.magnifyingglass": "Magnifier",
+                      "video": "Show in Screen Capture", "eye.slash": "Hide Desktop Icons",
+                      "sun.max.trianglebadge.exclamationmark": "Display Brightness Boost"]
+        let label = labels[key] ?? key
+        button.toolTip = "\(label) — \(active ? "ON" : "OFF")"
+        if key == "lightbulb" { button.toolTip! += " — double-click to reset" }
+        button.state = active ? .on : .off
+        button.setAccessibilityLabel(label)
+        button.setAccessibilityValue(active ? "ON" : "OFF")
         let iconName = active ? onIcon : offIcon
         button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: button.toolTip)
         button.contentTintColor = activeColor
@@ -399,6 +410,8 @@ class ControlPanelWindow: NSPanel {
         }
         button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: tooltip)
         button.toolTip = tooltip
+        button.state = settings.menuBarMode == 0 ? .off : .on
+        button.setAccessibilityValue(tooltip)
         button.contentTintColor = activeColor
     }
 

@@ -23,6 +23,8 @@ class LoginItemManager {
             // Fallback for macOS 12 and earlier
             SMLoginItemSetEnabled("com.macedgelight.app" as CFString, enabled)
         }
+        // A failed or approval-pending registration must not appear enabled.
+        syncWithSystemState()
     }
 
     /// Check current registration status

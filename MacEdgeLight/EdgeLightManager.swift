@@ -277,6 +277,7 @@ class EdgeLightManager {
     func resetToDefaults() {
         let wasDesktopHidden = settings.desktopIconsHidden
         settings.resetToDefaults()
+        hideMagnifier()
         DisplayBrightnessManager.shared.setEnabled(false)
         // Restore desktop icons if they were hidden
         if wasDesktopHidden {

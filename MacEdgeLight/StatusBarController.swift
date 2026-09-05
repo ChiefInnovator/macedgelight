@@ -1,6 +1,7 @@
 import Cocoa
+import Combine
 
-class StatusBarController {
+class StatusBarController: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem
     private weak var edgeLightManager: EdgeLightManager?
     private var toggleControlsItem: NSMenuItem?
@@ -8,11 +9,14 @@ class StatusBarController {
     private var menuBarModeItem: NSMenuItem?
     private var edrToggleItem: NSMenuItem?
     private var desktopIconsItem: NSMenuItem?
+    private var settingsObservation: AnyCancellable?
+    var menu: NSMenu? { statusItem.menu }
 
     init(manager: EdgeLightManager) {
         self.edgeLightManager = manager
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        super.init()
 
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "lightbulb.fill", accessibilityDescription: "Mac Edge Light")
@@ -21,6 +25,15 @@ class StatusBarController {
         }
 
         setupMenu()
+        refreshMenuState()
+        // @Published sends before storage changes; refresh after the setter finishes.
+        settingsObservation = AppSettings.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.refreshMenuState() }
+    }
+
+    deinit {
+        NSStatusBar.system.removeStatusItem(statusItem)
     }
 
     private func setupMenu() {
@@ -29,7 +42,8 @@ class StatusBarController {
 
         menu.addItem(NSMenuItem(title: "Keyboard Shortcuts", action: #selector(showHelp), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Toggle Light (Cmd+Shift+L)", action: #selector(toggleLight), keyEquivalent: ""))
+        let lightItem = NSMenuItem(title: "", action: #selector(toggleLight), keyEquivalent: "")
+        menu.addItem(lightItem)
         menu.addItem(NSMenuItem(title: "Brightness Up (Cmd+Shift+Up)", action: #selector(brightnessUp), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Brightness Down (Cmd+Shift+Down)", action: #selector(brightnessDown), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
@@ -51,7 +65,7 @@ class StatusBarController {
         desktopIconsItem = desktopItem
         menu.addItem(desktopItem)
         let supported = DisplayBrightnessManager.shared.isAvailable
-        let edrTitle = supported ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
+        let edrTitle = "Display Brightness Boost"
         let edrItem = NSMenuItem(title: edrTitle, action: #selector(toggleDisplayBrightness), keyEquivalent: "")
         edrItem.target = self
         edrItem.state = AppSettings.shared.edrBoosted ? .on : .off
@@ -79,11 +93,55 @@ class StatusBarController {
             item.target = self
         }
 
+        menu.delegate = self
         statusItem.menu = menu
     }
 
+    func menuWillOpen(_ menu: NSMenu) {
+        LoginItemManager.shared.syncWithSystemState()
+        refreshMenuState()
+    }
+
+    func refreshMenuState() {
+        let settings = AppSettings.shared
+        let toggles: [(Selector, String, Bool)] = [
+            (#selector(toggleLight), "Toggle Light", settings.isLightOn),
+            (#selector(allMonitors), "All Monitors", settings.showOnAllMonitors),
+            (#selector(toggleCursorReveal), "Cursor Reveal", settings.cursorRevealEnabled),
+            (#selector(toggleMagnifier), "Magnifier", settings.magnifierEnabled),
+            (#selector(toggleScreenCapture), "Show in Screen Capture", settings.visibleInCapture),
+            (#selector(toggleDesktopIcons), "Hide Desktop Icons", settings.desktopIconsHidden),
+            (#selector(toggleControls), "Show Controls", settings.showControlPanel),
+            (#selector(toggleLaunchAtLogin), "Launch at Login", settings.launchAtLogin)
+        ]
+        for (action, label, enabled) in toggles {
+            guard let item = menu?.items.first(where: { $0.action == action }) else { continue }
+            item.title = "\(label) — \(enabled ? "ON" : "OFF")"
+            if action == #selector(toggleLight) { item.title += " (Cmd+Shift+L)" }
+            item.state = enabled ? .on : .off
+        }
+        let lightActions: [Selector] = [#selector(brightnessUp), #selector(brightnessDown),
+            #selector(colorWarmer), #selector(colorCooler), #selector(borderThicker),
+            #selector(borderThinner), #selector(switchMonitor), #selector(allMonitors),
+            #selector(toggleMenuBarOverlay), #selector(toggleCursorReveal), #selector(toggleScreenCapture)]
+        for item in menu?.items ?? [] where item.action.map(lightActions.contains) == true {
+            item.isEnabled = settings.isLightOn
+        }
+        menuBarModeItem?.title = menuBarModeTitle()
+        menuBarModeItem?.state = settings.menuBarMode == 0 ? .off : .on
+        if let button = statusItem.button {
+            button.image = NSImage(systemSymbolName: settings.isLightOn ? "lightbulb.fill" : "lightbulb",
+                                   accessibilityDescription: "MacEdgeLight ring light")
+            button.image?.size = NSSize(width: 18, height: 18)
+            button.image?.isTemplate = true
+            button.toolTip = "MacEdgeLight — Ring Light \(settings.isLightOn ? "ON" : "OFF")"
+            button.setAccessibilityValue(settings.isLightOn ? "ON" : "OFF")
+        }
+        updateEDRMenuState()
+    }
+
     func updateControlsMenuTitle(visible: Bool) {
-        toggleControlsItem?.title = visible ? "Hide Controls" : "Show Controls"
+        refreshMenuState()
     }
 
     @objc private func showHelp() {
@@ -189,14 +247,14 @@ class StatusBarController {
         edrToggleItem?.state = desired ? .on : .off
         edrToggleItem?.isEnabled = supported || desired
         edrToggleItem?.title = supported || desired
-            ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
+            ? "Display Brightness Boost — \(desired ? "ON" : "OFF")" : "Display Brightness Boost — OFF (Not Supported)"
         let recoveryMessage = edgeLightManager?.boostRecoveryMessage
-        if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost (Waiting)" }
+        if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost — WAITING" }
         edrToggleItem?.toolTip = recoveryMessage
     }
 
     func updateDesktopIconsMenuTitle() {
-        desktopIconsItem?.title = desktopIconsTitle()
+        refreshMenuState()
     }
 
     @objc private func toggleControls() {
@@ -208,7 +266,7 @@ class StatusBarController {
         let newValue = !settings.launchAtLogin
         settings.launchAtLogin = newValue
         LoginItemManager.shared.setLaunchAtLogin(enabled: newValue)
-        launchAtLoginItem?.state = newValue ? .on : .off
+        refreshMenuState()
     }
 
     @objc private func resetDefaults() {

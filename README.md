@@ -1,10 +1,10 @@
-# MacEdgeLight 3.0.1
+# MacEdgeLight 3.0.2
 
 **Light for your calls. Brightness for your screen.**
 
 MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-[Download version 3.0.1](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.1) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.1)
+[Download version 3.0.2](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.2) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.2)
 
 ![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
 
@@ -30,7 +30,9 @@ For people who benefit from additional brightness, seeing text and everyday scre
 
 Extra brightness helps some people with low vision. Results depend on your vision, display, settings, and available headroom. MacEdgeLight also includes a separate magnifier loupe for inspecting details under the cursor.
 
-## Included in Version 3.0.1
+## Included in Version 3.0.2
+
+New in this patch: explicit ON/OFF menu and toolbar indicators, synchronized menu-bar mode, matching disabled controls, accurate Launch at Login state, and a magnifier reset fix. [Full release notes](docs/RELEASE_NOTES_3.0.2.md).
 
 - **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
 - **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
@@ -76,7 +78,7 @@ Extra brightness helps some people with low vision. Results depend on your visio
 
 **Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-1. Download the [3.0.1 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.1/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.1/MacEdgeLight.zip).
+1. Download the [3.0.2 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.2/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.2/MacEdgeLight.zip).
 2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
 3. Open MacEdgeLight and use its menu-bar icon or floating controls.
 4. Enable **Launch at Login** if you want it to return automatically after signing in.
@@ -113,7 +115,7 @@ The source is available under [PolyForm Strict 1.0.0](LICENSE). It is free for u
 
 ## Rapid brightness toggles
 
-Version 3.0.1 adds a conservative workaround for displays that fail to regain brightness after a rapid off/on toggle. Turning boost off restores ColorSync immediately. Re-enabling within 30 seconds queues recovery until that off interval ends. The menu shows **Waiting**, and the toolbar shows an hourglass with a countdown tooltip. Turning it off again cancels recovery. This interval is based on observed behavior, not an Apple timing guarantee; it does not promise a fixed physical brightness.
+Version 3.0.2 adds a conservative workaround for displays that fail to regain brightness after a rapid off/on toggle. Turning boost off restores ColorSync immediately. Re-enabling within 30 seconds queues recovery until that off interval ends. The menu shows **Waiting**, and the toolbar shows an hourglass with a countdown tooltip. Turning it off again cancels recovery. This interval is based on observed behavior, not an Apple timing guarantee; it does not promise a fixed physical brightness.
 
 ## Release version consistency
 
