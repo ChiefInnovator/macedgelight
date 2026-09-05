@@ -13,7 +13,7 @@ DEVELOPER_ID = Developer ID Application: MILL5, LLC (FS6453639M)
 EXPORT_OPTIONS = scripts/ExportOptions-export.plist
 UPLOAD_OPTIONS = scripts/ExportOptions-upload.plist
 
-.PHONY: all clean build test archive export export-unsigned sign notarize dmg-bg dmg zip release package verify-release release-unsigned
+.PHONY: all clean build test archive export export-unsigned sign notarize dmg-bg dmg zip release package verify-release release-unsigned sync-site-version check-site-version
 
 all: build
 
@@ -51,7 +51,7 @@ notarize: archive
 	xcrun stapler validate $(APP_PATH)
 
 # Refuse to package an old, unsigned, or unnotarized app.
-verify-release:
+verify-release: check-site-version
 	@test "$$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' $(APP_PATH)/Contents/Info.plist)" = "$(VERSION)" || (echo "Exported app version does not match $(VERSION)"; exit 1)
 	codesign --verify --deep --strict --verbose $(APP_PATH)
 	xcrun stapler validate $(APP_PATH)
@@ -88,7 +88,7 @@ zip: verify-release
 	@echo "Created $(ZIP_PATH)"
 
 # Build, sign, notarize, and package for release
-release: notarize
+release: check-site-version notarize
 	$(MAKE) package
 
 # Package an app already exported by Xcode Organizer without rebuilding it.
@@ -131,3 +131,10 @@ release-unsigned: export-unsigned dmg-bg
 clean:
 	@rm -rf $(BUILD_DIR)
 	xcodebuild -scheme $(SCHEME) clean 2>/dev/null || true
+
+# Use Xcode's full marketing version for website/README labels and download URLs.
+sync-site-version:
+	python3 scripts/sync-site-version.py
+
+check-site-version:
+	python3 scripts/sync-site-version.py --check

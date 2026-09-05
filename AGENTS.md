@@ -84,6 +84,8 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 
 ## Documentation
 
+- Always show the full `major.minor.patch` version on the GitHub Page, including visible labels, metadata, structured data, and download links. Xcode `MARKETING_VERSION` is authoritative. After version changes run `make sync-site-version`, then `make check-site-version`. Preserve historical release note versions.
+
 - Keep `docs/SPEC.md` aligned with implementation changes.
 - Keep README feature claims accurate, especially around XDR brightness boost behavior.
 - Avoid documenting behavior that depends on removed/private APIs unless the code actually uses it.
