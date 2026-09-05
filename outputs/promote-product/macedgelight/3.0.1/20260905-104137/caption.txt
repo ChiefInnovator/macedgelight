@@ -1,0 +1,15 @@
+Light for your calls. Brightness for your screen.
+
+MacEdgeLight 3.0.1 brings a recovery workaround for quick Display Brightness Boost toggles, alongside two independent ways to use light on your Mac:
+
+• Ring light: a glowing screen border for video calls and recordings, with adjustable brightness, warmth and width.
+• Display Brightness Boost: use available EDR headroom on compatible displays.
+
+“I am vision impaired and this helps me see my screen.” — Richard Crane, MacEdgeLight creator, on brightness boost.
+
+What changed in 3.0.1? Turning boost back on quickly queues recovery until 30 seconds after turn-off. You can cancel the queued request by turning boost off again. Available brightness still depends on your display and macOS; the workaround does not guarantee physical brightness.
+
+Download MacEdgeLight 3.0.1 for macOS 13+:
+https://chiefinnovator.github.io/macedgelight/
+
+#MacEdgeLight #InventingFireWithAI #MacApps #RingLight #DisplayBrightness

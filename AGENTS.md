@@ -84,6 +84,7 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 
 ## Documentation
 
+- Keep promotions in the current repository under `outputs/promote-product/<product>/<full-version>/<timestamp>/`. Keep each campaign's finished images, preview, caption, alt text, sources, and editable assets together; preserve earlier campaigns.
 - Always show the full `major.minor.patch` version on the GitHub Page, including visible labels, metadata, structured data, and download links. Xcode `MARKETING_VERSION` is authoritative. After version changes run `make sync-site-version`, then `make check-site-version`. Preserve historical release note versions.
 
 - Keep `docs/SPEC.md` aligned with implementation changes.

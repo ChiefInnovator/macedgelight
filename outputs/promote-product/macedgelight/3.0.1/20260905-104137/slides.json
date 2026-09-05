@@ -1,0 +1,51 @@
+[
+  {
+    "kicker": "NEW RELEASE / 3.0.1",
+    "title": "Light for your calls.\nBrightness for\nyour screen.",
+    "body": "MacEdgeLight",
+    "note": "Ring light + Display Brightness Boost",
+    "kind": "cover",
+    "alt": "MacEdgeLight 3.0.1 new release. Light for your calls. Brightness for your screen. A real photograph shows a MacBook and external display with illuminated borders. Ring light and Display Brightness Boost receive equal billing. The update adds queued recovery for quick boost toggles.",
+    "extra": "New: queued recovery for quick boost toggles."
+  },
+  {
+    "kicker": "01 / RING LIGHT",
+    "title": "Your screen.\nYour ring light.",
+    "body": "Add a glowing border for video calls\nand recordings.",
+    "note": "Adjust brightness, warmth and border width.",
+    "kind": "photo",
+    "alt": "Ring light feature: Your screen. Your ring light. The product photograph shows glowing borders on two displays. Text explains use for video calls and recordings, with adjustable brightness, warmth and border width."
+  },
+  {
+    "kicker": "02 / DISPLAY BRIGHTNESS BOOST",
+    "title": "A brighter screen,\non your terms.",
+    "body": "Use available EDR headroom on\ncompatible displays.",
+    "note": "Independent controls. Use either feature or both.",
+    "kind": "boost",
+    "alt": "Display Brightness Boost feature: A brighter screen, on your terms. A typographic panel says EDR, compatible displays, and independent control. The slide explains that available brightness depends on the display and macOS. No before-and-after brightness comparison is shown."
+  },
+  {
+    "kicker": "WHY IT MATTERS",
+    "title": "“I am vision\nimpaired and this\nhelps me see\nmy screen.”",
+    "body": "Richard Crane\nMacEdgeLight creator",
+    "note": "A personal experience with Display Brightness Boost.",
+    "kind": "quote",
+    "alt": "Creator quote in large type: I am vision impaired and this helps me see my screen. Attributed to Richard Crane, MacEdgeLight creator. This is his personal experience with Display Brightness Boost."
+  },
+  {
+    "kicker": "WHAT’S NEW / 3.0.1",
+    "title": "A recovery path\nfor quick toggles.",
+    "body": "Turn boost back on quickly and it queues\nrecovery until 30 seconds after turn-off.",
+    "note": "Turn it off again to cancel the queued request.",
+    "kind": "recovery",
+    "alt": "Version 3.0.1 adds a recovery workaround for quick boost toggles. Three numbered steps read Off, Waiting, and Auto retry. Recovery is queued until 30 seconds after turn-off; turning off again cancels it. The slide states this is a workaround, not a guarantee of physical brightness."
+  },
+  {
+    "kicker": "MACEDGELIGHT / 3.0.1",
+    "title": "Make room\nfor better light.",
+    "body": "Ring light + Display Brightness Boost\nTwo independent controls. One Mac app.",
+    "note": "macOS 13+ • Apple silicon + Intel",
+    "kind": "cta",
+    "alt": "Download MacEdgeLight 3.0.1. Make room for better light. Ring light plus Display Brightness Boost, with two independent controls in one Mac app. The download destination is chiefinnovator.github.io/macedgelight/. Requires macOS 13 or later; supports Apple silicon and Intel."
+  }
+]
