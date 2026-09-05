@@ -86,6 +86,18 @@ enum BoostHardwareCheck {
             for screen in screens { try checkRamp(on: screen) }
             print("PASS: activation and gamma readback")
 
+            // No run-loop turn between off and on: exercise outstanding Metal
+            // work and compositor teardown from the previous activation.
+            for cycle in 1...20 {
+                manager.setEnabled(false)
+                guard !manager.isBoosted else { throw Failure.message("Off failed in rapid cycle \(cycle)") }
+                manager.setEnabled(true)
+                guard manager.isBoosted else { throw Failure.message("Reactivation failed in rapid cycle \(cycle)") }
+                pump(for: 0.75)
+                for screen in screens { try checkRamp(on: screen) }
+            }
+            print("PASS: 20 immediate off/on cycles restore gamma (physical brightness not measured)")
+
             try resetGammaAndVerifyChange(on: screens)
             pump(for: 1.5)
             for screen in screens { try checkRamp(on: screen) }

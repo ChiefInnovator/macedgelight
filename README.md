@@ -4,7 +4,7 @@
 
 MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-[Download version 3.0](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.0) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.0)
+[Download version 3.0](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.1) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.1)
 
 ![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
 
@@ -76,7 +76,7 @@ Extra brightness helps some people with low vision. Results depend on your visio
 
 **Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-1. Download the [3.0 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.0/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.0/MacEdgeLight.zip).
+1. Download the [3.0 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.1/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.1/MacEdgeLight.zip).
 2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
 3. Open MacEdgeLight and use its menu-bar icon or floating controls.
 4. Enable **Launch at Login** if you want it to return automatically after signing in.
@@ -110,6 +110,10 @@ The available EDR headroom changes with the display and macOS conditions. The cu
 ### Is it free or open source?
 
 The source is available under [PolyForm Strict 1.0.0](LICENSE). It is free for uses permitted by that license; read the full terms for usage, modification, and distribution restrictions. It is not an OSI-approved open-source license.
+
+## Rapid brightness toggles
+
+Version 3.0.1 adds a conservative workaround for displays that fail to regain brightness after a rapid off/on toggle. Turning boost off restores ColorSync immediately. Re-enabling within 30 seconds queues recovery until that off interval ends. The menu shows **Waiting**, and the toolbar shows an hourglass with a countdown tooltip. Turning it off again cancels recovery. This interval is based on observed behavior, not an Apple timing guarantee; it does not promise a fixed physical brightness.
 
 ## Build and Test
 

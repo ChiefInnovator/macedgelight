@@ -5,7 +5,7 @@
 ## Product facts
 
 - Developer: Richard Crane.
-- Version: 3.0.0.
+- Version: 3.0.1.
 - Platform: macOS 13 Ventura or later; Apple silicon and Intel.
 - Ring light: adjustable brightness, warmth, border width, bloom, per-monitor selection, and configurable capture visibility.
 - Brightness boost: requires a display macOS reports as EDR-capable. Liquid Retina XDR MacBook Pro displays and Pro Display XDR are examples. The app identifies unsupported displays.
@@ -13,6 +13,8 @@
 - Price: free for uses permitted by PolyForm Strict 1.0.0. No account or subscription required. Source availability is not a claim of an OSI-approved open-source license.
 
 ## Version 3.0 behavior
+
+- Version 3.0.1 queues a rapid manual re-enable until 30 seconds after active boost was turned off. The controls show Waiting. Turning off while queued cancels recovery. This is a conservative timing workaround, not a fixed-luminance guarantee.
 
 The boost preference persists across sleep, lock, user switching, and display changes. Recovery keeps checking until the user session and display are ready. Gamma repair runs every 0.5 seconds, each display uses its own current headroom, and stalled rendering is checked independently of display-link callbacks. Turning boost off stops recovery and restores ColorSync.
 
@@ -25,7 +27,7 @@ Richard Crane, the creator, says: “I am vision impaired and this helps me see 
 ## Authoritative project links
 
 - [Website and FAQs](https://chiefinnovator.github.io/macedgelight/): Ring light and brightness boost, compatibility, setup, and answers.
-- [Version 3.0 release](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.0): Release notes and downloads.
+- [Version 3.0 release](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.1): Release notes and downloads.
 - [README](https://github.com/ChiefInnovator/macedgelight/blob/main/README.md): Product documentation and shortcuts.
 - [Technical specification](https://github.com/ChiefInnovator/macedgelight/blob/main/docs/SPEC.md): Implementation and hardware acceptance checks.
 - [Source and issues](https://github.com/ChiefInnovator/macedgelight): Repository and support issues.

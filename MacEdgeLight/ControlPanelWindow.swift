@@ -334,9 +334,12 @@ class ControlPanelWindow: NSPanel {
             let supported = DisplayBrightnessManager.shared.isAvailable
             edrButton.isEnabled = supported || settings.edrBoosted
             edrButton.contentTintColor = supported ? activeColor : NSColor(white: 1.0, alpha: 0.4)
-            edrButton.toolTip = settings.edrBoosted && !DisplayBrightnessManager.shared.isBoosted
-                ? "Display Brightness Boost — Enabled; waiting for display or session"
-                : (supported ? "Display Brightness Boost" : "Display Brightness Boost — Display not supported")
+            if let message = edgeLightManager?.boostRecoveryMessage {
+                edrButton.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: message)
+                edrButton.toolTip = "Display Brightness Boost — \(message)"
+            } else {
+                edrButton.toolTip = supported ? "Display Brightness Boost" : "Display Brightness Boost — Display not supported"
+            }
         }
 
         // Disable controls that don't apply when the light is off

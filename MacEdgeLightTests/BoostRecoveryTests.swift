@@ -10,6 +10,39 @@ final class BoostRecoveryTests: XCTestCase {
         return state
     }
 
+    func testRapidReenableWaitsForOffInterval() {
+        var state = ready
+        state.noteManualDisable(wasActive: true, now: 10)
+        XCTAssertFalse(state.shouldEnable(desired: true, available: true, now: 10.1))
+        XCTAssertFalse(state.shouldEnable(desired: true, available: true, now: 39.9))
+        XCTAssertTrue(state.shouldEnable(desired: true, available: true, now: 40))
+        XCTAssertEqual(state.manualCooldownRemaining(now: 25), 15)
+        XCTAssertEqual(state.manualCooldownRemaining(now: 41), 0)
+    }
+
+    func testCancellingQueuedReenableDoesNotExtendWaitOrTurnBoostOn() {
+        var state = ready
+        state.noteManualDisable(wasActive: true, now: 10)
+        state.noteManualDisable(wasActive: false, now: 20)
+        XCTAssertEqual(state.manualResumeNotBefore, 40)
+        XCTAssertFalse(state.shouldEnable(desired: false, available: true, now: 50))
+        XCTAssertTrue(state.shouldEnable(desired: true, available: true, now: 50))
+    }
+
+    func testCooldownCannotBypassLockAndWakeRecovery() {
+        var state = ready
+        state.noteManualDisable(wasActive: true, now: 10)
+        state.handle(.lock, now: 20)
+        XCTAssertFalse(state.shouldEnable(desired: true, available: true, now: 50))
+        state.handle(.unlock, now: 50)
+        XCTAssertFalse(state.shouldEnable(desired: true, available: true, now: 50.5))
+        XCTAssertTrue(state.shouldEnable(desired: true, available: true, now: 51))
+    }
+
+    func testFirstEnableDoesNotWait() {
+        XCTAssertTrue(ready.shouldEnable(desired: true, available: true, now: 0))
+    }
+
     func testAllWakeAndUnlockOrderingsRecover() {
         // System wake, display wake, unlock, and session activation can arrive
         // in any order. Every partial sequence must remain suspended.

@@ -190,8 +190,9 @@ class StatusBarController {
         edrToggleItem?.isEnabled = supported || desired
         edrToggleItem?.title = supported || desired
             ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
-        edrToggleItem?.toolTip = desired && !DisplayBrightnessManager.shared.isBoosted
-            ? "Enabled; waiting for display or session" : nil
+        let recoveryMessage = edgeLightManager?.boostRecoveryMessage
+        if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost (Waiting)" }
+        edrToggleItem?.toolTip = recoveryMessage
     }
 
     func updateDesktopIconsMenuTitle() {

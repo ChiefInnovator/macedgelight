@@ -334,8 +334,21 @@ class EdgeLightManager {
     func toggleDisplayBrightness() {
         // Toggle intent, not temporary hardware state. Off during recovery must
         // cancel the request, rather than accidentally turning boost back on.
+        if settings.edrBoosted {
+            boostRecovery.noteManualDisable(
+                wasActive: DisplayBrightnessManager.shared.isBoosted,
+                now: ProcessInfo.processInfo.systemUptime
+            )
+        }
         settings.edrBoosted.toggle()
         reconcileBoost()
+    }
+
+    var boostRecoveryMessage: String? {
+        guard settings.edrBoosted, !DisplayBrightnessManager.shared.isBoosted else { return nil }
+        let seconds = Int(ceil(boostRecovery.manualCooldownRemaining(now: ProcessInfo.processInfo.systemUptime)))
+        if seconds > 0 { return "Waiting \(seconds)s for display to settle; boost will resume automatically" }
+        return "Enabled; waiting for display or session"
     }
 
     private func handleBoostEvent(_ event: BoostRecoveryState.Event) {
@@ -469,6 +482,20 @@ struct BoostRecoveryState {
     var sessionIsUsable = false
     private(set) var resumeNotBefore: TimeInterval = 0
 
+    // Observed rapid off/on failures recover after a 30-second off interval.
+    // This is a conservative recovery workaround, not an Apple API guarantee.
+    private(set) var manualResumeNotBefore: TimeInterval = 0
+
+    mutating func noteManualDisable(wasActive: Bool, now: TimeInterval) {
+        // Toggling a queued request off must not restart the cooling-off period.
+        guard wasActive else { return }
+        manualResumeNotBefore = now + 30
+    }
+
+    func manualCooldownRemaining(now: TimeInterval) -> TimeInterval {
+        max(0, manualResumeNotBefore - now)
+    }
+
     mutating func handle(_ event: Event, now: TimeInterval) {
         switch event {
         case .systemSleep: isSleeping = true
@@ -493,6 +520,6 @@ struct BoostRecoveryState {
     func shouldEnable(desired: Bool, available: Bool, now: TimeInterval) -> Bool {
         isRunning && desired && available && isSessionActive && sessionIsUsable
             && !isSleeping && !isDisplaySleeping && !isScreenLocked
-            && now >= resumeNotBefore
+            && now >= resumeNotBefore && now >= manualResumeNotBefore
     }
 }
