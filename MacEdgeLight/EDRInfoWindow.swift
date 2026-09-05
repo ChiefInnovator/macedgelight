@@ -193,9 +193,9 @@ class EDRInfoWindow: NSPanel {
 
             if boosted {
                 let applied = DisplayBrightnessManager.shared.appliedHeadroom(for: screen)
-                lines.append("  Applied multiply:    \(String(format: "%.3f", applied))x")
+                lines.append("  Requested headroom:    \(String(format: "%.3f", applied))x")
             } else {
-                lines.append("  Applied multiply:    n/a")
+                lines.append("  Requested headroom:    n/a")
             }
 
             // Effective brightness: headroom * backlight gives a relative measure

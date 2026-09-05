@@ -2,17 +2,11 @@ import Cocoa
 import Metal
 import QuartzCore
 
-/// Boosts display brightness into XDR extended range using a full-screen Metal
-/// overlay with multiply compositing. The overlay renders at the maximum current
-/// EDR headroom, dynamically queried every frame, so all screen content is
-/// boosted to the brightest the display can produce. Hardware backlight is also
-/// set to max via DisplayServices.
-///
-/// The Metal layer must be re-rendered periodically — macOS dynamically manages
-/// EDR headroom and decays extended range if no new frames are presented.
-/// Headroom is queried on every frame to prevent white-screen clipping when
-/// the available range changes (brightness adjustment, True Tone, sleep/wake).
-class DisplayBrightnessManager {
+/// Boosts display brightness using an invisible Metal EDR overlay and a fresh
+/// synthetic gamma ramp. macOS still controls available EDR headroom.
+/// AppKit and gamma state are owned by the main thread; the display-link thread
+/// only renders the layer/brightness snapshot protected by renderLock.
+final class DisplayBrightnessManager {
     static let shared = DisplayBrightnessManager()
 
     private(set) var isBoosted = false
@@ -20,12 +14,38 @@ class DisplayBrightnessManager {
     private(set) var isChanging = false
 
     private var overlayWindows: [NSWindow] = []
-    private var metalLayers: [(CAMetalLayer, NSScreen)] = []
+    // Every target carries its own identity and health state. Geometry stays on
+    // the main thread; this dictionary is shared only under renderLock.
+    private struct RenderTarget {
+        let displayID: CGDirectDisplayID
+        let layer: CAMetalLayer
+        var headroom: Double
+        var lastSubmittedAt: TimeInterval
+    }
+    private var renderTargets: [CGDirectDisplayID: RenderTarget] = [:]
     private var metalDevice: MTLDevice?
     private var commandQueue: MTLCommandQueue?
-    private var screenObserver: NSObjectProtocol?
     private var displayLink: CVDisplayLink?
     private let renderLock = NSLock()
+    private let frameLock = NSLock()
+    private var maintenanceTimer: Timer?
+    private var configuration: [DisplayConfiguration] = []
+    private var gammaErrors: [CGDirectDisplayID: CGError] = [:]
+
+    private struct DisplayConfiguration: Equatable {
+        let id: CGDirectDisplayID
+        let frame: CGRect
+        let backingScale: CGFloat
+    }
+
+    private var currentConfiguration: [DisplayConfiguration] {
+        NSScreen.screens.filter {
+            $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
+        }.map {
+            DisplayConfiguration(id: $0.displayID, frame: $0.frame,
+                                 backingScale: $0.backingScaleFactor)
+        }
+    }
 
     /// Maximum EDR headroom requested from macOS via the invisible Metal overlay.
     /// The overlay is not visible — it only signals macOS to grant headroom.
@@ -41,13 +61,8 @@ class DisplayBrightnessManager {
     /// auto-brightness) so content doesn't clip to white.
     private let gammaHeadroomSafety: Float = 0.85
 
-    /// Currently applied gamma scale — tracked so we only re-upload the LUT
-    /// when headroom changes meaningfully.
-    private var currentAppliedGammaScale: Float = 1.0
-    private var lastGammaUpdate: TimeInterval = 0
-
     var isAvailable: Bool {
-        guard metalDevice != nil else { return false }
+        guard metalDevice != nil, commandQueue != nil else { return false }
         return NSScreen.screens.contains {
             $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
         }
@@ -58,12 +73,19 @@ class DisplayBrightnessManager {
         commandQueue = metalDevice?.makeCommandQueue()
     }
 
-    func toggle() {
-        if isBoosted { deactivate() } else { activate() }
+    func setEnabled(_ enabled: Bool) {
+        precondition(Thread.isMainThread)
+        guard !isChanging, enabled != isBoosted else { return }
+        if enabled {
+            guard isAvailable else { return }
+            activate()
+        } else {
+            deactivate()
+        }
     }
 
     func restore() {
-        if isBoosted { deactivate() }
+        setEnabled(false)
     }
 
     /// Force every display's gamma LUT back to its ColorSync profile default.
@@ -78,74 +100,54 @@ class DisplayBrightnessManager {
 
     private func activate() {
         isChanging = true
-        // Hardware backlight intentionally left alone — DisplayServices
-        // always animates brightness changes over ~300-500ms, which makes
-        // the toggle feel mushy. The gamma LUT + EDR headroom deliver the
-        // perceptible boost and both apply within a single compositor frame.
-        let initialScale = safeGammaScale()
-        applyGammaScale(initialScale)
-        currentAppliedGammaScale = initialScale
+        defer { isChanging = false }
+        configuration = currentConfiguration
         createOverlays()
-        startDisplayLink()
+        guard !overlayWindows.isEmpty else { return }
         isBoosted = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
+        startDisplayLink()
+        maintainBoost()
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.maintainBoost()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        maintenanceTimer = timer
     }
 
     private func deactivate() {
         isChanging = true
+        defer { isChanging = false }
         isBoosted = false
-
-        // Ask macOS to re-apply the user's ColorSync profile. This is the
-        // authoritative clean state — no saved LUT to read back, no risk of
-        // writing stale values, no way for a crash or sleep cycle to leave
-        // our saved copy out of sync with what's actually loaded.
-        Self.resetGammaToProfile()
-        currentAppliedGammaScale = 1.0
-        lastGammaUpdate = 0
-
-        // Kill EDR signaling synchronously. Previously these ran async and
-        // macOS held EDR headroom for ~500ms while the display link drained,
-        // which looked like a visible fade. Stopping the display link and
-        // removing the Metal layers on the caller's frame means macOS sees
-        // "no more EDR content" immediately and starts dropping headroom.
+        maintenanceTimer?.invalidate()
+        maintenanceTimer = nil
         stopDisplayLink()
-        for window in overlayWindows {
-            window.orderOut(nil)
-        }
-        overlayWindows.removeAll()
-        metalLayers.removeAll()
+        // No queued gamma writes can run after this authoritative reset.
+        Self.resetGammaToProfile()
+        removeOverlays()
+        configuration = []
+        gammaErrors.removeAll()
+    }
 
-        // Observer cleanup doesn't affect visible state — defer.
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            if let obs = self.screenObserver {
-                NotificationCenter.default.removeObserver(obs)
-                self.screenObserver = nil
-            }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { self.isChanging = false }
+    private func removeOverlays() {
+        for window in overlayWindows { window.orderOut(nil) }
+        overlayWindows.removeAll()
+        renderLock.lock()
+        renderTargets.removeAll()
+        renderLock.unlock()
     }
 
     // MARK: - Gamma table boost
 
-    /// Writes a synthetic linear gamma ramp scaled by the given factor to every
-    /// EDR-capable display. Blacks stay at 0; values above `1/scale` stretch
-    /// past 1.0 into EDR range where the headroom overlay makes them visible.
-    ///
-    /// Unlike the previous implementation, this never reads back the live LUT,
-    /// so it can't be poisoned by a dirty table left behind by a crashed run
-    /// or an interrupted sleep cycle. Deactivation calls
-    /// `CGDisplayRestoreColorSyncSettings`, which asks macOS to re-apply the
-    /// user's ColorSync profile directly — no saved state to desync.
-    private func applyGammaScale(_ scale: Float) {
-        let count = 256
-        let ramp = Self.buildBoostedRamp(scale: scale, count: count)
-        for screen in NSScreen.screens
-            where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
-            CGSetDisplayTransferByTable(
-                screen.displayID, UInt32(count), ramp, ramp, ramp
-            )
+    /// Reassert a fresh ramp even if the desired scale has not changed: macOS
+    /// can replace the LUT without changing EDR headroom. Failed writes retry on
+    /// the next maintenance tick. Never read/rescale the live transfer table.
+    private func applyGammaScale(_ scale: Float, to displayID: CGDirectDisplayID) {
+        let ramp = Self.buildBoostedRamp(scale: scale, count: 256)
+        let result = CGSetDisplayTransferByTable(displayID, UInt32(ramp.count), ramp, ramp, ramp)
+        if result != .success, gammaErrors[displayID] != result {
+            NSLog("Brightness boost gamma write failed for display %u: %d; will retry", displayID, result.rawValue)
         }
+        gammaErrors[displayID] = result
     }
 
     /// Pure function, exposed for tests. Builds a linear ramp from 0 up to
@@ -156,44 +158,63 @@ class DisplayBrightnessManager {
         return (0..<count).map { Float($0) / denom * scale }
     }
 
-    /// Clamp the desired gamma scale to what the display can currently
-    /// sustain, using the minimum live headroom across EDR screens with a
-    /// safety margin. Never returns below 1.0 (neutral).
-    private func safeGammaScale() -> Float {
-        let headrooms = NSScreen.screens
-            .filter { $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 }
-            .map { Float($0.maximumExtendedDynamicRangeColorComponentValue) }
-        return Self.safeGammaScale(
-            desired: gammaScale,
-            liveHeadrooms: headrooms,
-            safety: gammaHeadroomSafety
-        )
-    }
-
     /// Pure function version, exposed for tests. Given the desired max gamma
     /// scale, a list of live EDR headroom values (one per EDR-capable screen),
     /// and a safety fraction, returns the scale that should be applied.
     static func safeGammaScale(desired: Float, liveHeadrooms: [Float], safety: Float) -> Float {
-        guard let minHeadroom = liveHeadrooms.min() else { return 1.0 }
+        guard desired.isFinite, desired >= 1.0,
+              safety.isFinite, safety > 0, safety <= 1,
+              !liveHeadrooms.isEmpty,
+              liveHeadrooms.allSatisfy({ $0.isFinite && $0 >= 1.0 }),
+              let minHeadroom = liveHeadrooms.min() else { return 1.0 }
         let headroomCeiling = max(1.0, minHeadroom * safety)
         return min(desired, headroomCeiling)
     }
 
-    /// Called from the display link every frame; throttled to ~2 Hz. When
-    /// available headroom drifts (thermal throttling, ambient light change,
-    /// True Tone), re-upload the gamma LUT so content doesn't clip.
-    private func adjustGammaForHeadroom() {
-        let now = Date().timeIntervalSinceReferenceDate
-        guard now - lastGammaUpdate > 0.5 else { return }
+    /// Runs on the main run loop, independently of display-link delivery.
+    /// Each display uses its own headroom so a dim external screen cannot lower
+    /// the boost on another screen. Also recovers stopped/stalled renderers.
+    private func maintainBoost() {
+        guard isBoosted else { return }
+        refreshDisplayConfiguration()
+        renderLock.lock()
+        let now = ProcessInfo.processInfo.systemUptime
+        let stalled = renderTargets.values.contains { now - $0.lastSubmittedAt > 2.0 }
+        renderLock.unlock()
 
-        let target = safeGammaScale()
-        guard abs(target - currentAppliedGammaScale) > 0.02 else { return }
-
-        lastGammaUpdate = now
-        currentAppliedGammaScale = target
-        DispatchQueue.main.async { [weak self] in
-            self?.applyGammaScale(target)
+        if stalled {
+            rebuildOverlays()
         }
+        if displayLink == nil { renderAllLayers() }
+
+        refreshGamma()
+    }
+
+    private func refreshGamma() {
+        for screen in NSScreen.screens where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
+            let scale = Self.safeGammaScale(
+                desired: gammaScale,
+                liveHeadrooms: [Float(screen.maximumExtendedDynamicRangeColorComponentValue)],
+                safety: gammaHeadroomSafety
+            )
+            applyGammaScale(scale, to: screen.displayID)
+        }
+    }
+
+    func refreshDisplayConfiguration() {
+        precondition(Thread.isMainThread)
+        guard isBoosted, !isChanging else { return }
+        if currentConfiguration != configuration {
+            rebuildOverlays()
+        }
+        // Headroom changes also post screen-parameter notifications. Refresh
+        // the render snapshot immediately without rebuilding the EDR context.
+        let headrooms = NSScreen.screens.map { ($0.displayID, appliedHeadroom(for: $0)) }
+        renderLock.lock()
+        for (displayID, headroom) in headrooms {
+            renderTargets[displayID]?.headroom = headroom
+        }
+        renderLock.unlock()
     }
 
     // MARK: - Display link
@@ -201,16 +222,18 @@ class DisplayBrightnessManager {
     private func startDisplayLink() {
         stopDisplayLink()
         var link: CVDisplayLink?
-        CVDisplayLinkCreateWithActiveCGDisplays(&link)
-        guard let link = link else { return }
+        guard CVDisplayLinkCreateWithActiveCGDisplays(&link) == kCVReturnSuccess,
+              let link else { return }
         let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
-        CVDisplayLinkSetOutputCallback(link, { (_, _, _, _, _, userInfo) -> CVReturn in
+        let callbackResult = CVDisplayLinkSetOutputCallback(link, { (_, _, _, _, _, userInfo) -> CVReturn in
             let mgr = Unmanaged<DisplayBrightnessManager>.fromOpaque(userInfo!).takeUnretainedValue()
             mgr.renderAllLayers()
             return kCVReturnSuccess
         }, selfPtr)
-        CVDisplayLinkStart(link)
-        displayLink = link
+        guard callbackResult == kCVReturnSuccess else { return }
+        if CVDisplayLinkStart(link) == kCVReturnSuccess {
+            displayLink = link
+        }
     }
 
     private func stopDisplayLink() {
@@ -220,27 +243,25 @@ class DisplayBrightnessManager {
         }
     }
 
-    /// Returns the headroom value currently being applied to the overlay for a given screen.
-    /// Capped to the current headroom macOS has actually granted (not potential).
+    /// Keep rendered values within current granted headroom; potential
+    /// headroom is for capability detection, not a safe rendering limit.
     func appliedHeadroom(for screen: NSScreen) -> Double {
-        return min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
+        let headroom = screen.maximumExtendedDynamicRangeColorComponentValue
+        return headroom.isFinite ? min(max(headroom, 1.0), maxHeadroomCap) : 1.0
     }
 
     // MARK: - EDR overlay
 
-
     private func createOverlays() {
         guard let device = metalDevice, let queue = commandQueue else { return }
 
-        metalLayers.removeAll()
-
+        var targets: [CGDirectDisplayID: RenderTarget] = [:]
         for screen in NSScreen.screens {
             let maxEDR = screen.maximumPotentialExtendedDynamicRangeColorComponentValue
             guard maxEDR > 1.0 else { continue }
 
-            // Full-screen EDR overlay using sourceOver compositing. Renders
-            // EDR white behind all content to boost the display's actual light
-            // output into XDR range without multiplying screen content.
+            // Transparent EDR signaling window. The gamma ramp applies the
+            // content boost; this window keeps an EDR rendering context alive.
             let window = NSWindow(
                 contentRect: screen.frame,
                 styleMask: .borderless,
@@ -252,7 +273,7 @@ class DisplayBrightnessManager {
             window.hasShadow = false
             window.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue - 1)
             window.ignoresMouseEvents = true
-            window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+            window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
             window.hidesOnDeactivate = false
             window.isReleasedWhenClosed = false
             window.animationBehavior = .none
@@ -286,60 +307,59 @@ class DisplayBrightnessManager {
             )
             rootLayer.addSublayer(metalLayer)
 
-            let headroom = min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
+            let headroom = appliedHeadroom(for: screen)
             renderFrame(metalLayer: metalLayer, brightness: headroom, queue: queue)
-            metalLayers.append((metalLayer, screen))
+            targets[screen.displayID] = RenderTarget(
+                displayID: screen.displayID, layer: metalLayer, headroom: headroom,
+                lastSubmittedAt: ProcessInfo.processInfo.systemUptime
+            )
             window.orderFront(nil)
             overlayWindows.append(window)
         }
 
-        // Re-create overlays when screen configuration changes (e.g. display
-        // plugged in/out, resolution change) so geometry and EDR values stay correct.
-        screenObserver = NotificationCenter.default.addObserver(
-            forName: NSApplication.didChangeScreenParametersNotification,
-            object: nil, queue: .main
-        ) { [weak self] _ in
-            self?.rebuildOverlays()
-        }
+        renderLock.lock()
+        renderTargets = targets
+        renderLock.unlock()
     }
 
-    private var isRebuilding = false
-
     private func rebuildOverlays() {
-        guard !isChanging, !isRebuilding else { return }
-        isRebuilding = true
+        guard isBoosted else { return }
+        isChanging = true
+        defer { isChanging = false }
         stopDisplayLink()
-        if let obs = screenObserver {
-            NotificationCenter.default.removeObserver(obs)
-            screenObserver = nil
-        }
-        for window in overlayWindows {
-            window.orderOut(nil)
-        }
-        overlayWindows.removeAll()
+        Self.resetGammaToProfile()
+        removeOverlays()
+        configuration = currentConfiguration
         createOverlays()
         startDisplayLink()
-        isRebuilding = false
+        refreshGamma()
     }
 
     private func renderAllLayers() {
-        guard renderLock.try() else { return }  // Skip frame if previous render still in progress
-        defer { renderLock.unlock() }
+        guard frameLock.try() else { return }
+        defer { frameLock.unlock() }
         guard let queue = commandQueue else { return }
-        let layers = metalLayers  // Snapshot to avoid mutation during iteration
-        for (layer, screen) in layers {
-            // Use the maximum potential headroom directly so brightness jumps
-            // to full immediately instead of ramping up as macOS warms the
-            // dynamic headroom value.
-            let headroom = min(screen.maximumExtendedDynamicRangeColorComponentValue, maxHeadroomCap)
-            renderFrame(metalLayer: layer, brightness: headroom, queue: queue)
+        renderLock.lock()
+        let targets = Array(renderTargets.values)
+        renderLock.unlock()
+        // nextDrawable can block; never hold the state lock while rendering.
+        for target in targets {
+            if renderFrame(metalLayer: target.layer, brightness: target.headroom, queue: queue) {
+                renderLock.lock()
+                // A callback from an old layer must not revive a removed target
+                // or mark its replacement healthy after a rebuild.
+                if renderTargets[target.displayID]?.layer === target.layer {
+                    renderTargets[target.displayID]?.lastSubmittedAt = ProcessInfo.processInfo.systemUptime
+                }
+                renderLock.unlock()
+            }
         }
-        adjustGammaForHeadroom()
     }
 
-    private func renderFrame(metalLayer: CAMetalLayer, brightness: Double, queue: MTLCommandQueue) {
+    @discardableResult
+    private func renderFrame(metalLayer: CAMetalLayer, brightness: Double, queue: MTLCommandQueue) -> Bool {
         guard let drawable = metalLayer.nextDrawable(),
-              let commandBuffer = queue.makeCommandBuffer() else { return }
+              let commandBuffer = queue.makeCommandBuffer() else { return false }
 
         let desc = MTLRenderPassDescriptor()
         desc.colorAttachments[0].texture = drawable.texture
@@ -351,11 +371,12 @@ class DisplayBrightnessManager {
             red: brightness, green: brightness, blue: brightness, alpha: 0.0
         )
 
-        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return }
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: desc) else { return false }
         encoder.endEncoding()
 
         commandBuffer.present(drawable)
         commandBuffer.commit()
+        return true
     }
 }
 

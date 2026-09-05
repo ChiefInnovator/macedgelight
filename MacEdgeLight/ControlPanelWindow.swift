@@ -328,15 +328,15 @@ class ControlPanelWindow: NSPanel {
                   onIcon: "eye.slash", offIcon: "eye")
         toggleButtons["eye.slash"]?.toolTip = settings.desktopIconsHidden
             ? "Show Desktop Icons" : "Hide Desktop Icons"
-        setToggle("sun.max.trianglebadge.exclamationmark", active: DisplayBrightnessManager.shared.isBoosted,
+        setToggle("sun.max.trianglebadge.exclamationmark", active: settings.edrBoosted,
                   onIcon: "sun.max.fill", offIcon: "sun.max")
         if let edrButton = toggleButtons["sun.max.trianglebadge.exclamationmark"] {
             let supported = DisplayBrightnessManager.shared.isAvailable
-            edrButton.isEnabled = supported
+            edrButton.isEnabled = supported || settings.edrBoosted
             edrButton.contentTintColor = supported ? activeColor : NSColor(white: 1.0, alpha: 0.4)
-            edrButton.toolTip = supported
-                ? "Display Brightness Boost"
-                : "Display Brightness Boost — Display not supported"
+            edrButton.toolTip = settings.edrBoosted && !DisplayBrightnessManager.shared.isBoosted
+                ? "Display Brightness Boost — Enabled; waiting for display or session"
+                : (supported ? "Display Brightness Boost" : "Display Brightness Boost — Display not supported")
         }
 
         // Disable controls that don't apply when the light is off

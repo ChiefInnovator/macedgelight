@@ -1,239 +1,160 @@
-# MacEdgeLight
+# MacEdgeLight 3.0
 
-<table><tr>
-<td valign="top"><b>Make your Mac glow.</b> A stunning ambient edge light that wraps your entire screen in a smooth, customizable glow — perfect for streaming, video calls, presentations, focus sessions, or just making your desktop look incredible.<br><br>Inspired by <a href="https://github.com/shanselman/EdgeLight">Windows Edge Light</a> by Scott Hanselman. Built natively for macOS.</td>
-<td><img src="docs/images/macedgelight-multi-monitor.webp" alt="MacEdgeLight running on MacBook Pro and external TV" width="300"></td>
-</tr></table>
+**Light for your calls. Brightness for your screen.**
 
-## Why MacEdgeLight?
+MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-| Use Case | How It Helps |
+[Download version 3.0](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.0) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.0)
+
+![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
+
+## Two Ways to Light Your Mac
+
+| Screen ring light | Display brightness boost |
 | --- | --- |
-| **Streaming & Podcasting** | Add a professional ambient glow to your setup. Toggle capture visibility so viewers see the effect — or keep it private. |
-| **Zoom, Teams & Video Calls** | Stand out on camera with a polished edge glow that frames your screen shares and makes demos pop during meetings. |
-| **Presentations & Demos** | Frame your screen with light to draw audience attention. Hide desktop icons for a clean look. Cursor reveal spotlights where you're pointing. |
-| **Low Vision & Accessibility** | XDR brightness boost pushes your display beyond its normal limits — one click makes everything easier to see. *(Requires XDR-capable display.)* |
-| **Late Night Coding** | Warm amber glow reduces eye strain. Adjustable brightness from whisper-quiet to blazing bloom. |
-| **Focus & Productivity** | The glow creates a visual boundary that keeps your eyes on screen. Auto-hiding controls stay out of your way. |
-| **Multi-Monitor Setups** | Light up one monitor or all of them. Cycle between displays instantly. |
-| **Replace Your Ring Light** | A software ring light that lives on your screen — no desk clutter, no power cables, no USB hubs. Travels with your laptop. |
+| Adds an adjustable glowing border around the screen. | Uses available extended dynamic range to brighten screen content. |
+| Adjust brightness, color temperature, and border width. | Toggle independently of the ring light. |
+| Use one display or all connected displays. | Adapts to each compatible display’s own headroom. |
+| Choose whether the border appears in screen capture. | Remembers your enabled preference and recovers after interruptions. |
+| Toggle with `Command + Shift + L`. | Toggle with `Command + Shift + B`. |
 
-### MacEdgeLight vs. Physical Ring Lights
+The ring light works without an EDR display. Brightness boost requires a display that macOS reports as EDR-capable; the app marks unsupported displays.
 
-|  | MacEdgeLight | Physical Ring Light |
-| --- | --- | --- |
-| **Cost** | Free | $30–$100+ |
-| **Setup** | Download and run | Mount, cable, power supply |
-| **Portability** | Built into your Mac — goes everywhere | Extra gear to pack and carry |
-| **Adjustability** | Brightness, color temp, border width, bloom — all instant | Limited dials, fixed position |
-| **Desk Space** | Zero | Needs a stand or clip |
-| **Multi-Monitor** | One click to light all screens | Buy one per monitor |
-| **Screen Capture** | Toggle on/off per recording | Always physically visible |
-| **Eye Strain** | Glow wraps the screen edge — light comes from where you're looking | Light source pointed at your face |
+## Why Brightness Matters
+
+> “I am vision impaired and this helps me see my screen.”
+>
+> — Richard Crane, creator of MacEdgeLight
+
+For people who benefit from additional brightness, seeing text and everyday screen content more clearly can make a practical difference. That personal experience is one reason MacEdgeLight includes brightness boost alongside the ring light.
+
+Extra brightness helps some people with low vision. Results depend on your vision, display, settings, and available headroom. MacEdgeLight also includes a separate magnifier loupe for inspecting details under the cursor.
+
+## What’s New in 3.0
+
+- **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
+- **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
+- **Independent display adjustment:** one display’s reduced headroom no longer limits another display’s boost.
+- **Gamma repair:** a main-thread timer reapplies a fresh gamma ramp every 0.5 seconds, repairing system resets even when headroom has not changed.
+- **Rendering recovery:** the app checks each display for stalled submissions and rebuilds the EDR overlays when needed.
+- **Reliable off and quit behavior:** turning boost off cancels recovery; shutdown stops rendering and restores the display’s ColorSync profile.
+- **Stronger regression coverage:** tests exercise recovery event ordering, repeated sleep cycles, gamma safety, and the production lifecycle handler. A standalone hardware harness checks gamma readback and supports Thread Sanitizer.
 
 ## Features
 
-### Edge Light Overlay
+### Screen Ring Light
 
-- Smooth glowing border around your entire screen with rounded corners
-- Adjustable brightness from subtle (20%) to blazing bloom (200%)
-- Color temperature control from cool blue-white to warm amber
-- Adjustable border width (10px–150px)
-- Click-through — never interferes with your work
-- Hold any adjustment button for continuous fine-grained control
+- Smooth, rounded, click-through border that leaves your content interactive.
+- Adjustable glow brightness, cool-to-warm color temperature, and border width.
+- Bloom effect above 100% ring-light brightness. This is an overlay setting, not a claim about physical display luminance.
+- Hold adjustment buttons for fine control.
+- One-monitor or all-monitor operation, with automatic display-change handling.
+- Menu bar modes: **Below**, **Extend**, or **Auto** to reveal the menu bar as the cursor approaches.
 
-### XDR Brightness Boost
+### Display Brightness Boost
 
-- Push your display into extended dynamic range for maximum brightness
-- Dual technique: invisible Metal EDR overlay signals macOS to grant headroom, while linear gamma scaling pushes display values into the extended range — bright without washout
-- **Adaptive safety clamp** — the gamma scale re-calibrates ~2×/sec to stay within the headroom macOS is currently granting, so content never clips to white when thermals or ambient light reduce available headroom
-- **Hard on/off** — the boost disables instantly instead of ramping, so you can kill it the moment you need to
-- **Panic quit** — tap the `Q` key five times in two seconds to quit MacEdgeLight from anywhere
-- **Graceful degradation** — on Macs without an EDR-capable display the control is clearly marked "Display not supported"
-- One-click toggle from the control bar or status bar menu
-- Ideal for users with low vision or anyone working in bright environments
-- Requires a Mac with an XDR display (MacBook Pro with Liquid Retina XDR, Pro Display XDR)
+- Separate menu-bar, toolbar, and keyboard controls.
+- Persistent enabled preference and automatic recovery after sleep, unlock, session switching, and reconnection.
+- Current-headroom safety clamp for each EDR-capable display.
+- Clean ColorSync restoration when disabled.
+- Enable **Launch at Login** for restoration after logout or restart.
 
-### Bloom Mode
+**What to expect:** macOS determines the brightness headroom available above normal screen white. Brightness settings, display modes, ambient conditions, and thermal limits can change that range. The app cannot guarantee constant physical luminance or override those limits. Boost cannot run while the display is asleep or after logout terminates the app.
 
-- Push brightness past 100% for an additive white-hot bloom effect
-- Glow radius expands and intensifies at higher brightness levels
-- Smooth animated transitions between all settings
+**Color response:** while boost is active, the synthetic gamma ramp bypasses Night Shift, True Tone, and hardware calibration. Turning boost off restores the display’s ColorSync profile. Disable boost when you need your normal calibrated color response.
 
-### Cursor Reveal
+### Magnifier and Presentation Controls
 
-- Toggle a feathered circular cutout that follows your cursor
-- See through the glow wherever your mouse goes — great for presentations
+- Floating magnifier loupe follows the cursor.
+- Cursor reveal creates a feathered cutout in the glowing border.
+- Show or hide desktop icons; icons are restored when the app quits normally.
+- Configure whether the ring-light overlay is included in screen capture. Capture behavior can depend on macOS and the recording application.
+- Floating, draggable controls with hold-to-repeat adjustments and auto-hide behavior.
+- Double-click the lightbulb to reset ring-light settings while preserving boost, magnifier, and desktop-icon state.
 
-### Magnifier
+## Install
 
-- Floating magnifier loupe that follows your cursor
-- Useful for demos and presentations where fine detail matters
+**Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-### Screen Capture Control
+1. Download the [3.0 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.0/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.0/MacEdgeLight.zip).
+2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
+3. Open MacEdgeLight and use its menu-bar icon or floating controls.
+4. Enable **Launch at Login** if you want it to return automatically after signing in.
 
-- Hidden from screen capture by default (invisible in Zoom, Teams, or recordings)
-- Toggle visibility to show the glow in streams and recordings
-- Perfect for streamers who want the effect on camera
-
-### Menu Bar Modes
-
-- **Below** — light stays under the menu bar
-- **Extend** — light covers the menu bar for a fully immersive look
-- **Auto** (default) — light extends over menu bar but smoothly reveals it when your cursor approaches, then extends back when you move away
-
-### Desktop Icons
-
-- Show/hide all desktop icons with one click
-- Clean desktop for presentations, screencasts, or focus time
-- Automatically restored when the app quits
-
-### Multi-Monitor
-
-- Show on a single monitor or all monitors simultaneously
-- Cycle between monitors with a button press
-- Adapts automatically when monitors are plugged in or removed
-
-### Auto-Hiding Controls
-
-- Floating HUD toolbar with quick access to everything
-- Drag grip on the right side for repositioning
-- Fades away after 3 seconds of inactivity — reappears instantly on hover
-- Background dynamically darkens when overlapping the glow
-
-### Reset to Defaults
-
-- Double-click the lightbulb to reset ring light settings (brightness, color, border) while preserving EDR boost, magnifier, and desktop icon state
-- Full reset button on the control bar or status bar menu restores everything
-
-### Lightweight
-
-- Pure Swift, native AppKit — no Electron, no web views
-- Runs as a menu bar utility (no Dock icon)
-- Optional launch at login
-- Zero dependencies
+The release app is signed with Developer ID and notarized by Apple. No account or subscription is required.
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 | --- | --- |
-| `Cmd + Shift + L` | Toggle light on/off |
-| `Cmd + Shift + Up` | Increase brightness |
-| `Cmd + Shift + Down` | Decrease brightness |
-| Tap `Q` five times in 2 s | Panic quit MacEdgeLight |
+| `Command + Shift + L` | Toggle the ring light |
+| `Command + Shift + Up` | Increase ring-light brightness |
+| `Command + Shift + Down` | Decrease ring-light brightness |
+| `Command + Shift + B` | Toggle display brightness boost |
+| Five rapid, unmodified `Q` taps within two seconds | Quit MacEdgeLight and restore the display profile |
 
-## Control Bar
+## Frequently Asked Questions
 
-The floating toolbar provides quick access to all features:
+### Can I use brightness boost without the ring light?
 
-| Icon | Function | Toggle |
-| --- | --- | --- |
-| Sun (dim) | Decrease brightness (hold to fine-adjust) |  |
-| Sun (bright) | Increase brightness (hold to fine-adjust) |  |
-| Flame | Warmer color temperature (hold to fine-adjust) |  |
-| Snowflake | Cooler color temperature (hold to fine-adjust) |  |
-| Compress | Thinner border (hold to fine-adjust) |  |
-| Expand | Thicker border (hold to fine-adjust) |  |
-| Lightbulb | Toggle light on/off — double-click to reset | Filled when on |
-| Monitor | Switch to next monitor |  |
-| Monitors | All monitors mode | Filled when on |
-| Menu bar | Menu bar mode: Below → Extend → Auto | Cycles through 3 states |
-| Circle | Cursor reveal mode | Filled when on |
-| Video | Show in screen capture | Filled when on |
-| HDR | XDR brightness boost | Filled when on |
-| Magnifier | Floating magnifier loupe | Filled when on |
-| Eye | Hide desktop icons | Swaps to eye.slash |
-| Reset | Reset all settings to defaults |  |
-| X | Hide controls |  |
-| Grip | Drag to reposition the control bar |  |
+Yes. They are independent controls. You can leave the ring light off while using brightness boost, or use the ring light on a display that does not support boost.
 
-## Get Started
+### Why is boost enabled but waiting?
 
-### Requirements
+The checkmark represents your saved preference. The renderer waits while the display is unavailable, asleep, or in an inactive or locked session. Recovery continues until it is safe to resume. You can turn the preference off while it is waiting.
 
-- macOS 13 Ventura or later
-- Retina and non-Retina displays supported
-- Wide-gamut (P3) color displays supported
-- XDR brightness boost requires an XDR-capable display
+### Why is the boost sometimes small?
 
-### Installation
+The available EDR headroom changes with the display and macOS conditions. The current implementation caps gamma scaling at 1.45 and 85% of each display’s current headroom, with a neutral floor of 1.0. These are gamma-scale values, not measured brightness increases. See [Apple’s EDR documentation](https://developer.apple.com/documentation/appkit/nsscreen/maximumextendeddynamicrangecolorcomponentvalue).
 
-Download the latest `.dmg` or `.zip` from [Releases](https://github.com/ChiefInnovator/macedgelight/releases).
+### Is it free or open source?
 
-The app is signed and notarized by Apple — just open the DMG, drag to Applications, and launch. No Gatekeeper warnings.
+The source is available under [PolyForm Strict 1.0.0](LICENSE). It is free for uses permitted by that license; read the full terms for usage, modification, and distribution restrictions. It is not an OSI-approved open-source license.
 
-### Building from Source
+## Build and Test
 
-Open `MacEdgeLight.xcodeproj` in Xcode and build, or use the Makefile:
+MacEdgeLight uses Swift and AppKit, with no third-party runtime dependencies. Open `MacEdgeLight.xcodeproj` in Xcode or use:
 
 ```bash
-make build       # Debug build
-make test        # Run unit tests
-make release     # Build DMG + zip for distribution
-make dmg         # DMG only (drag-to-Applications)
-make zip         # Zip only
-make clean       # Clean build artifacts
+make build       # Debug app in build/Debug/MacEdgeLight.app
+make test        # Unit tests
+make release     # Developer ID signed, notarized DMG and ZIP
+make clean       # Remove build artifacts
 ```
 
-## How It Works
+The project uses automatic signing with the MILL5 team (`FS6453639M`) and registered App ID `com.richardcrane.macedgelight`. Hardened Runtime is enabled. Release packaging requires a valid Apple account in **Xcode → Settings → Accounts**, access to MILL5, a Developer ID signing identity, and `create-dmg`.
 
-The edge light is rendered in a fullscreen, click-through overlay window using Core Graphics. Each frame is drawn with multiple layered passes:
+`make release` uses Xcode’s distribution service for automatic Developer ID signing and notarization, then packages the exported app. It does not use the old `MacEdgeLightNotarize` password profile. If Xcode cannot log in, refresh the account in Xcode Settings before retrying. Apple processing is polled for up to 10 minutes; if it takes longer, rerun `bash scripts/export-notarized.sh build/MacEdgeLight.xcarchive build/export`, then `make package`. For a non-default Xcode installation, prefix commands with `DEVELOPER_DIR=/Applications/Xcode-beta.app/Contents/Developer` (adjust the path to your installation).
 
-### Rendering Pipeline
+For an interactive release, open the project, select **Product → Archive**, then use Organizer’s **Distribute App** flow for **Developer ID / Direct Distribution** and notarization. Export the approved app into `build/export/`, then run `make package`. Packaging verifies the app version, signature, stapled notarization ticket, and Gatekeeper assessment before creating the DMG and ZIP. `make dmg` and `make zip` also require an already notarized export.
 
-1. **Outer glow** — Concentric expanding rounded rectangles drawn outward from the frame edge, each with decreasing opacity. Creates the soft light spill effect around the border.
+For display-pipeline changes, quit MacEdgeLight first, then run:
 
-2. **Solid frame** — The main visible border. A frame shape (outer rect minus inner rect) is filled with a diagonal linear gradient (white → tinted → white) using even-odd clipping. Color temperature shifts the tint from cool blue-white to warm amber.
+```bash
+bash scripts/test-boost-hardware.sh
+bash scripts/test-boost-hardware.sh --thread-sanitizer
+```
 
-3. **Inner glow** — Soft light bleeding inward from the frame edge, giving the border a volumetric look.
+The harness temporarily enables boost, checks actual gamma readback, forces ColorSync resets, exercises event-tracking mode, and verifies cleanup. It restores ColorSync on completion, a caught failure, or ordinary SIGINT/SIGTERM cancellation. It does not change saved app preferences. Hardware readback is not a physical luminance measurement.
 
-4. **Bloom mode** — When brightness exceeds 100%, the excess is rendered as additive light using `.plusLighter` blend mode. The glow radius expands proportionally — at 200% brightness, the bloom radius doubles.
+Physical sleep/wake, logout/login, display reconnection, and extended stability checks remain necessary for hardware validation. See the [technical specification and acceptance checklist](docs/SPEC.md).
 
-5. **Cursor cutout** — A radial gradient in `.destinationOut` blend mode punches a feathered circle through the glow at the cursor position.
+## Architecture
 
-### How the XDR Boost Works
+- `AppSettings` stores user preferences in UserDefaults.
+- `EdgeLightManager` connects controls, monitors, hotkeys, and lifecycle notifications.
+- `BoostRecoveryState` handles typed lifecycle events and recovery eligibility.
+- `MonitorManager` manages the ring-light overlays.
+- `DisplayBrightnessManager` uses an EDR Metal overlay and fresh synthetic gamma ramps. AppKit and gamma work stay on the main thread; rendering uses synchronized targets keyed by display ID.
 
-The brightness boost uses a dual technique for maximum brightness without washout:
+The app is not sandboxed because its overlay and desktop-control features require broader macOS access. See [AGENTS.md](AGENTS.md) for contributor guidance and [docs/SPEC.md](docs/SPEC.md) for implementation details.
 
-1. **Invisible Metal EDR overlay** — A full-screen `CAMetalLayer` renders EDR values with alpha=0 (invisible) in extended linear Display P3 color space. This signals macOS to grant extended dynamic range headroom without visually affecting screen content. A CVDisplayLink keeps the EDR headroom alive by continuously presenting frames.
+## License and Credits
 
-2. **Linear gamma scaling** — The display's gamma transfer table is scaled by up to 1.45x, pushing all pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and washes out), linear scaling preserves relative contrast — blacks stay black, everything else gets brighter.
+[PolyForm Strict License 1.0.0](LICENSE). Copyright © 2026 Richard Crane.
 
-3. **Adaptive headroom clamp** — Every render frame (throttled to ~2 Hz), the manager re-queries the current EDR headroom macOS is actually granting and clamps the applied gamma scale to 85% of it. If headroom decays due to thermals, ambient light, True Tone, or auto-brightness, the LUT is re-uploaded at a lower scale so content never clips to white.
+Inspired by [Scott Hanselman’s Windows Edge Light](https://github.com/shanselman/EdgeLight). Native macOS implementation by [Richard Crane](https://inventingfirewith.ai).
 
-4. **Hard on/off** — The boost disables within a single compositor frame: the gamma LUT is reverted first, then the display link and Metal overlays are torn down synchronously. No hardware backlight manipulation, so there's no ~500ms ramp from `DisplayServicesSetBrightness`.
+[Website](https://chiefinnovator.github.io/macedgelight/) · [GitHub Releases](https://github.com/ChiefInnovator/macedgelight/releases) · [Report an issue](https://github.com/ChiefInnovator/macedgelight/issues) · [Support](mailto:rich@mill5.com)
 
-### Animation System
-
-All visual properties use per-frame lerp interpolation at 60fps, settling in ~0.3 seconds. Timers run in `.common` run loop mode so animations continue during button hold interactions.
-
-### Display Quality
-
-- **Retina/HiDPI** — Core Graphics rendering at full backing scale factor (2x–3x pixel density)
-- **Wide-gamut color** — Uses the display's native color space for accurate P3 color reproduction on MacBook Pro, Studio Display, and Pro Display XDR
-
-### Window Architecture
-
-The overlay ignores all mouse events, sits at a custom window level, and is excluded from screen capture by default. One overlay window is created per active monitor. The control panel floats above the overlay to remain accessible at any border thickness.
-
-## License
-
-[PolyForm Strict License 1.0.0](LICENSE) — Free for noncommercial, personal, educational, and nonprofit use. No redistribution or modification permitted.
-
-## Credits
-
-- Original concept: [Scott Hanselman's EdgeLight](https://github.com/shanselman/EdgeLight)
-- macOS implementation by [Richard Crane](https://inventingfirewith.ai)
-
----
-
-**Transform your screen into an ambient light show with MacEdgeLight!**
-
-[Download the latest release](https://github.com/ChiefInnovator/macedgelight/releases) and give your Mac the glow it deserves.
-
----
-
-Powered by [MILL5](https://www.mill5.com)
-Explore [Richard Crane on Microsoft MVP](https://mvp.microsoft.com/en-US/MVP/profile/10ce0bc0-7536-43f6-b28c-e9601a4a0d0d)
-Listen to the [Inventing Fire with AI](https://inventingfirewith.ai) podcast for insights on technology and innovation.
-For support, contact: [rich@mill5.com](mailto:rich@mill5.com)
+Powered by [MILL5](https://www.mill5.com). Explore [Richard Crane’s Microsoft MVP profile](https://mvp.microsoft.com/en-US/MVP/profile/10ce0bc0-7536-43f6-b28c-e9601a4a0d0d) and the [Inventing Fire with AI](https://inventingfirewith.ai) podcast.

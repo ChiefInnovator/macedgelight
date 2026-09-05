@@ -13,7 +13,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        DisplayBrightnessManager.shared.restore()
+        // Cancel recovery before restoring gamma or doing other quit cleanup.
+        edgeLightManager?.stop()
         if AppSettings.shared.desktopIconsHidden {
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
@@ -26,7 +27,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             try? killall.run()
             AppSettings.shared.desktopIconsHidden = false
         }
-        edgeLightManager?.stop()
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {

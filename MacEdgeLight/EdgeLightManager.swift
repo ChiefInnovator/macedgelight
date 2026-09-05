@@ -13,6 +13,9 @@ class EdgeLightManager {
     private var didWakeObserver: Any?
     private var screenLockObserver: Any?
     private var screenUnlockObserver: Any?
+    private var boostRecovery = BoostRecoveryState()
+    private var boostRecoveryTimer: Timer?
+    private var boostWorkspaceObservers: [NSObjectProtocol] = []
 
     private let brightnessStep = 0.15
     private let brightnessStepFine = 0.025
@@ -30,6 +33,12 @@ class EdgeLightManager {
     }
 
     func start() {
+        precondition(Thread.isMainThread)
+        guard !boostRecovery.isRunning else { return }
+        boostRecovery.isRunning = true
+        boostRecovery.isSessionActive = true
+        updateBoostSessionState()
+
         // Create overlay windows
         monitorManager.createOverlays()
 
@@ -37,10 +46,8 @@ class EdgeLightManager {
         // cycle before anything else touches display transfer tables.
         DisplayBrightnessManager.resetGammaToProfile()
 
-        // Restore EDR brightness boost state before UI is created
-        if settings.edrBoosted && DisplayBrightnessManager.shared.isAvailable {
-            DisplayBrightnessManager.shared.toggle()
-        }
+        // The persisted preference survives temporary system suspension.
+        reconcileBoost()
 
         // Create control panel
         controlPanel = ControlPanelWindow(manager: self)
@@ -85,73 +92,75 @@ class EdgeLightManager {
             object: nil,
             queue: .main
         ) { [weak self] _ in
+            self?.reconcileBoost()
+            DisplayBrightnessManager.shared.refreshDisplayConfiguration()
             guard !DisplayBrightnessManager.shared.isChanging else { return }
             self?.monitorManager.refreshForScreenChanges()
             self?.positionControlPanel()
         }
 
-        // Tear the XDR boost down before sleep and rebuild it after wake.
-        // Restoring across sleep in place is unreliable — headroom vanishes
-        // while our boosted gamma LUT stays live, and macOS can restore a
-        // dirty LUT cached from before sleep. We deactivate without touching
-        // `settings.edrBoosted` so it survives sleep and drives re-activation
-        // on wake after the gamma has been wiped clean.
         let workspaceCenter = NSWorkspace.shared.notificationCenter
         willSleepObserver = workspaceCenter.addObserver(
             forName: NSWorkspace.willSleepNotification,
             object: nil, queue: .main
-        ) { _ in
-            if DisplayBrightnessManager.shared.isBoosted {
-                DisplayBrightnessManager.shared.toggle()
-            }
+        ) { [weak self] _ in
+            self?.handleBoostEvent(.systemSleep)
         }
         didWakeObserver = workspaceCenter.addObserver(
             forName: NSWorkspace.didWakeNotification,
             object: nil, queue: .main
         ) { [weak self] _ in
-            DisplayBrightnessManager.resetGammaToProfile()
-            guard let self,
-                  self.settings.edrBoosted,
-                  DisplayBrightnessManager.shared.isAvailable else { return }
-            // Let macOS settle headroom before we re-engage the boost.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
-                guard let self,
-                      self.settings.edrBoosted,
-                      !DisplayBrightnessManager.shared.isBoosted else { return }
-                DisplayBrightnessManager.shared.toggle()
-                self.controlPanel?.updateToggleStates()
-                self.statusBar?.updateEDRMenuState()
-            }
+            self?.handleBoostEvent(.systemWake)
         }
+        boostWorkspaceObservers = [
+            workspaceCenter.addObserver(forName: NSWorkspace.screensDidSleepNotification,
+                                        object: nil, queue: .main) { [weak self] _ in
+                self?.handleBoostEvent(.displaySleep)
+            },
+            workspaceCenter.addObserver(forName: NSWorkspace.screensDidWakeNotification,
+                                        object: nil, queue: .main) { [weak self] _ in
+                self?.handleBoostEvent(.displayWake)
+            },
+            workspaceCenter.addObserver(forName: NSWorkspace.sessionDidResignActiveNotification,
+                                        object: nil, queue: .main) { [weak self] _ in
+                self?.handleBoostEvent(.sessionInactive)
+            },
+            workspaceCenter.addObserver(forName: NSWorkspace.sessionDidBecomeActiveNotification,
+                                        object: nil, queue: .main) { [weak self] _ in
+                self?.handleBoostEvent(.sessionActive)
+            }
+        ]
 
-        // Lock screen: mirror the sleep/wake pattern. On lock the display
-        // context changes enough that we'd rather drop the boost cleanly and
-        // re-engage on unlock than leave a scaled LUT loaded while the login
-        // window is in charge of the screen.
         let distributedCenter = DistributedNotificationCenter.default()
         screenLockObserver = distributedCenter.addObserver(
             forName: Notification.Name("com.apple.screenIsLocked"),
             object: nil, queue: .main
-        ) { _ in
-            if DisplayBrightnessManager.shared.isBoosted {
-                DisplayBrightnessManager.shared.toggle()
-            }
+        ) { [weak self] _ in
+            self?.handleBoostEvent(.lock)
         }
         screenUnlockObserver = distributedCenter.addObserver(
             forName: Notification.Name("com.apple.screenIsUnlocked"),
             object: nil, queue: .main
         ) { [weak self] _ in
-            guard let self,
-                  self.settings.edrBoosted,
-                  DisplayBrightnessManager.shared.isAvailable,
-                  !DisplayBrightnessManager.shared.isBoosted else { return }
-            DisplayBrightnessManager.shared.toggle()
-            self.controlPanel?.updateToggleStates()
-            self.statusBar?.updateEDRMenuState()
+            self?.handleBoostEvent(.unlock)
         }
+
+        // Recovery must outlive a slow login handoff or temporarily missing
+        // display. It is independent of Metal frame delivery and never gives up.
+        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.reconcileBoost()
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        boostRecoveryTimer = timer
     }
 
     func stop() {
+        precondition(Thread.isMainThread)
+        guard boostRecovery.isRunning else { return }
+        boostRecovery.isRunning = false
+        boostRecoveryTimer?.invalidate()
+        boostRecoveryTimer = nil
+        DisplayBrightnessManager.shared.restore()
         hotkeyManager.unregister()
         monitorManager.removeAllOverlays()
         hideMagnifier()
@@ -160,6 +169,7 @@ class EdgeLightManager {
         controlPanel?.close()
         if let observer = screenChangeObserver {
             NotificationCenter.default.removeObserver(observer)
+            screenChangeObserver = nil
         }
         let workspaceCenter = NSWorkspace.shared.notificationCenter
         if let observer = willSleepObserver {
@@ -170,6 +180,8 @@ class EdgeLightManager {
             workspaceCenter.removeObserver(observer)
             didWakeObserver = nil
         }
+        for observer in boostWorkspaceObservers { workspaceCenter.removeObserver(observer) }
+        boostWorkspaceObservers.removeAll()
         let distributedCenter = DistributedNotificationCenter.default()
         if let observer = screenLockObserver {
             distributedCenter.removeObserver(observer)
@@ -264,10 +276,8 @@ class EdgeLightManager {
 
     func resetToDefaults() {
         let wasDesktopHidden = settings.desktopIconsHidden
-        if DisplayBrightnessManager.shared.isBoosted {
-            DisplayBrightnessManager.shared.toggle()
-        }
         settings.resetToDefaults()
+        DisplayBrightnessManager.shared.setEnabled(false)
         // Restore desktop icons if they were hidden
         if wasDesktopHidden {
             let task = Process()
@@ -322,10 +332,56 @@ class EdgeLightManager {
     // MARK: - Display Brightness Boost
 
     func toggleDisplayBrightness() {
-        DisplayBrightnessManager.shared.toggle()
-        settings.edrBoosted = DisplayBrightnessManager.shared.isBoosted
+        // Toggle intent, not temporary hardware state. Off during recovery must
+        // cancel the request, rather than accidentally turning boost back on.
+        settings.edrBoosted.toggle()
+        reconcileBoost()
+    }
+
+    private func handleBoostEvent(_ event: BoostRecoveryState.Event) {
+        precondition(Thread.isMainThread)
+        guard boostRecovery.isRunning else { return }
+        boostRecovery.handle(event, now: ProcessInfo.processInfo.systemUptime)
+        let wasBoosted = DisplayBrightnessManager.shared.isBoosted
+        DisplayBrightnessManager.shared.setEnabled(false)
+        // Deactivation already restores ColorSync. Only reset it separately
+        // when resuming a desired boost that was already suspended.
+        if event.resumeDelay != nil, settings.edrBoosted, !wasBoosted {
+            DisplayBrightnessManager.resetGammaToProfile()
+        }
+        refreshBoostUI()
+    }
+
+    private func reconcileBoost() {
+        guard !DisplayBrightnessManager.shared.isChanging else { return }
+        updateBoostSessionState()
+        let enabled = boostRecovery.shouldEnable(
+            desired: settings.edrBoosted,
+            available: DisplayBrightnessManager.shared.isAvailable,
+            now: ProcessInfo.processInfo.systemUptime
+        )
+        DisplayBrightnessManager.shared.setEnabled(enabled)
+        refreshBoostUI()
+    }
+
+    private func refreshBoostUI() {
         controlPanel?.updateToggleStates()
         statusBar?.updateEDRMenuState()
+    }
+
+    private func updateBoostSessionState() {
+        guard let sessionInfo = CGSessionCopyCurrentDictionary() as? [String: Any] else {
+            // No accessible user session: fail closed, retry on the next tick.
+            boostRecovery.sessionIsUsable = false
+            return
+        }
+        // Notifications suspend immediately; a lagging dictionary must not
+        // override them. Conversely, an unlock notification is not enough if
+        // the live session still reports locked or off-console.
+        let locked = sessionInfo["CGSSessionScreenIsLocked"] as? Bool ?? boostRecovery.isScreenLocked
+        boostRecovery.sessionIsUsable = sessionInfo[kCGSessionOnConsoleKey as String] as? Bool == true
+            && sessionInfo[kCGSessionLoginDoneKey as String] as? Bool == true
+            && !locked
     }
 
     // MARK: - Magnifier
@@ -386,5 +442,57 @@ class EdgeLightManager {
         if validIndex < screens.count {
             panel.positionOnScreen(screens[validIndex])
         }
+    }
+}
+
+/// Recovery eligibility is separate from the persisted user preference and the
+/// running renderer. No retry budget: a late display/session is still eligible.
+struct BoostRecoveryState {
+    enum Event: CaseIterable {
+        case systemSleep, systemWake, displaySleep, displayWake
+        case lock, unlock, sessionInactive, sessionActive
+
+        var resumeDelay: TimeInterval? {
+            switch self {
+            case .systemWake, .displayWake: return 2.0
+            case .unlock, .sessionActive: return 0.75
+            default: return nil
+            }
+        }
+    }
+
+    var isRunning = false
+    var isSleeping = false
+    var isDisplaySleeping = false
+    var isScreenLocked = false
+    var isSessionActive = false
+    var sessionIsUsable = false
+    private(set) var resumeNotBefore: TimeInterval = 0
+
+    mutating func handle(_ event: Event, now: TimeInterval) {
+        switch event {
+        case .systemSleep: isSleeping = true
+        case .systemWake: isSleeping = false
+        case .displaySleep: isDisplaySleeping = true
+        case .displayWake: isDisplaySleeping = false
+        case .lock: isScreenLocked = true
+        case .unlock: isScreenLocked = false
+        case .sessionInactive: isSessionActive = false
+        case .sessionActive: isSessionActive = true
+        }
+        if let delay = event.resumeDelay {
+            settle(after: delay, now: now)
+        }
+    }
+
+    mutating func settle(after delay: TimeInterval, now: TimeInterval) {
+        // An unlock arriving after wake must not shorten the wake settle delay.
+        resumeNotBefore = max(resumeNotBefore, now + delay)
+    }
+
+    func shouldEnable(desired: Bool, available: Bool, now: TimeInterval) -> Bool {
+        isRunning && desired && available && isSessionActive && sessionIsUsable
+            && !isSleeping && !isDisplaySleeping && !isScreenLocked
+            && now >= resumeNotBefore
     }
 }

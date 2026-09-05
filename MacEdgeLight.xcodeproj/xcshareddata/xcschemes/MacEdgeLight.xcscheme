@@ -52,16 +52,6 @@
                ReferencedContainer = "container:MacEdgeLight.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "65347103B5A6F4E6708CD557"
-               BuildableName = "MacEdgeLightTests.xctest"
-               BlueprintName = "MacEdgeLightTests"
-               ReferencedContainer = "container:MacEdgeLight.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

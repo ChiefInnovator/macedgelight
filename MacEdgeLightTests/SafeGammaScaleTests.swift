@@ -5,6 +5,45 @@ final class SafeGammaScaleTests: XCTestCase {
     private let desired: Float = 1.45
     private let safety: Float = 0.85
 
+    func testInvalidConfigurationCannotProduceAnUnsafeRamp() {
+        for invalid: Float in [.nan, .infinity, -.infinity, -1, 0, 0.5] {
+            XCTAssertEqual(DisplayBrightnessManager.safeGammaScale(
+                desired: invalid, liveHeadrooms: [16], safety: safety
+            ), 1)
+        }
+        for invalid: Float in [.nan, .infinity, -.infinity, -1, 0, 1.01] {
+            XCTAssertEqual(DisplayBrightnessManager.safeGammaScale(
+                desired: desired, liveHeadrooms: [16], safety: invalid
+            ), 1)
+        }
+    }
+
+    func testRampSafetyAcrossFallingAndRisingHeadroom() {
+        // A continuous sweep catches discontinuities at the neutral floor and
+        // desired ceiling, including on the way back down after a boost.
+        let headrooms = (0...1600).map { Float($0) / 100 }
+        for headroom in headrooms + headrooms.reversed() {
+            let scale = DisplayBrightnessManager.safeGammaScale(
+                desired: desired, liveHeadrooms: [headroom], safety: safety
+            )
+            XCTAssertGreaterThanOrEqual(scale, 1)
+            XCTAssertLessThanOrEqual(scale, desired)
+            XCTAssertLessThanOrEqual(scale, max(1, headroom * safety))
+            let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: scale, count: 256)
+            XCTAssertEqual(ramp.first, 0)
+            XCTAssertEqual(ramp.last, scale)
+            XCTAssertTrue(zip(ramp, ramp.dropFirst()).allSatisfy { $0 <= $1 })
+        }
+    }
+
+    func testInvalidHeadroomFallsBackToNeutral() {
+        for headroom: Float in [.nan, .infinity, -.infinity, 0, -1] {
+            XCTAssertEqual(DisplayBrightnessManager.safeGammaScale(
+                desired: desired, liveHeadrooms: [headroom], safety: safety
+            ), 1.0)
+        }
+    }
+
     func testReturnsNeutralWhenNoEDRScreens() {
         let result = DisplayBrightnessManager.safeGammaScale(
             desired: desired, liveHeadrooms: [], safety: safety

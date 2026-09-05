@@ -54,8 +54,8 @@ class StatusBarController {
         let edrTitle = supported ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
         let edrItem = NSMenuItem(title: edrTitle, action: #selector(toggleDisplayBrightness), keyEquivalent: "")
         edrItem.target = self
-        edrItem.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
-        edrItem.isEnabled = supported
+        edrItem.state = AppSettings.shared.edrBoosted ? .on : .off
+        edrItem.isEnabled = supported || AppSettings.shared.edrBoosted
         edrToggleItem = edrItem
         menu.addItem(edrItem)
         menu.addItem(NSMenuItem.separator())
@@ -184,7 +184,14 @@ class StatusBarController {
     }
 
     func updateEDRMenuState() {
-        edrToggleItem?.state = DisplayBrightnessManager.shared.isBoosted ? .on : .off
+        let desired = AppSettings.shared.edrBoosted
+        let supported = DisplayBrightnessManager.shared.isAvailable
+        edrToggleItem?.state = desired ? .on : .off
+        edrToggleItem?.isEnabled = supported || desired
+        edrToggleItem?.title = supported || desired
+            ? "Display Brightness Boost" : "Display Brightness Boost (Not Supported)"
+        edrToggleItem?.toolTip = desired && !DisplayBrightnessManager.shared.isBoosted
+            ? "Enabled; waiting for display or session" : nil
     }
 
     func updateDesktopIconsMenuTitle() {

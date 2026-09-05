@@ -1,167 +1,62 @@
-# MacEdgeLight — Marketing Plan
+# MacEdgeLight 3.0 — Marketing Guide
 
 ## Positioning
 
-**Tagline:** Make your Mac glow.
+**Tagline:** Light for your calls. Brightness for your screen.
 
-**One-liner:** A stunning ambient edge light that wraps your screen in a customizable glow with XDR brightness boost — for streaming, presentations, accessibility, and focus.
+**One-liner:** MacEdgeLight combines an adjustable screen ring light and a display brightness boost in one native macOS menu bar app. Use either independently, or both.
 
-**Elevator pitch:** MacEdgeLight adds a beautiful, adjustable glowing border around your Mac screen with XDR brightness boost that pushes HDR displays to peak luminance. Streamers use it to elevate their setup. Presenters use it to frame their demos. Low-vision users use it to see their screen clearly. Developers use it for late-night eye comfort. It's lightweight, native, and free.
+Give the two features equal prominence. Ring lighting serves calls, recordings, presentations, and personal setups. Brightness boost serves people who benefit from a brighter screen, including some people with low vision.
 
-## Target Audiences
+## Creator’s Experience
 
-### 1. Streamers & Content Creators (Primary)
+Richard Crane’s approved first-person statement:
 
-**Who:** Twitch streamers, YouTube creators, podcast hosts with video
-**Pain point:** Standing out visually, making their screen setup look polished and professional
-**Hook:** "Add a professional ambient glow to your stream with zero setup"
-**Key features:** Screen capture toggle (show/hide from OBS/Streamlabs), bloom mode for dramatic effect, color temperature to match stream branding, multi-monitor support
+> “I am vision impaired and this helps me see my screen.”
 
-### 2. Presenters & Educators (Primary)
+Attribute the quote to Richard Crane, creator of MacEdgeLight. Explain why brightness matters using this real experience. Do not invent testimonials, medical outcomes, adoption numbers, awards, or review ratings. Do not claim that greater brightness helps every person with a visual impairment.
 
-**Who:** Conference speakers, corporate presenters, teachers doing screen shares, demo engineers
-**Pain point:** Drawing audience attention to the screen, clean visual presentation
-**Hook:** "Frame your screen with light so your audience knows exactly where to look"
-**Key features:** Cursor reveal spotlight, hide desktop icons, auto menu bar, click-through overlay, invisible to Zoom/Teams by default
+## Claims and Boundaries
 
-### 3. Developers & Power Users (Secondary)
+- Native Swift/AppKit, macOS 13+, Apple silicon and Intel.
+- Ring light and brightness boost are independent controls.
+- Boost requires an EDR-capable display as reported by macOS. The ring light does not require EDR.
+- Version 3.0 preserves boost intent, continuously checks recovery eligibility, repairs gamma resets, and adjusts each display independently.
+- Enable Launch at Login for restoration after logout/restart. The app does not run after logout terminates it or illuminate a sleeping display.
+- macOS controls current headroom and thermal limits. Do not promise maximum brightness, fixed luminance, universal compatibility, or a measured 45% brightness increase.
+- The synthetic gamma ramp bypasses Night Shift, True Tone, and hardware calibration while active. Normal ColorSync state returns on deactivation.
+- Describe the source as available under PolyForm Strict 1.0.0. Do not use “open source” or suggest unrestricted modification/redistribution.
+- Claim signing and notarization only after verifying the published artifacts.
+- Avoid unsupported eye-strain, health, competitor-exclusivity, or physical ring-light performance claims.
 
-**Who:** Software engineers, designers, writers who spend long hours at screens
-**Pain point:** Eye strain during late sessions, wanting a polished desktop aesthetic
-**Hook:** "Warm ambient glow that reduces eye strain and makes your desktop look incredible"
-**Key features:** Warm color temperature, adjustable brightness, keyboard shortcuts, lightweight menu bar app
+## Search, Answer, and Generative Discovery
 
-### 4. Low Vision & Accessibility Users (Primary)
+The canonical page is <https://chiefinnovator.github.io/macedgelight/>. It is deployed by GitHub Pages from `main:/docs`.
 
-**Who:** Users with low vision, age-related macular degeneration, or anyone working in bright ambient environments
-**Pain point:** Screen not bright enough, difficulty seeing content clearly
-**Hook:** "One click to push your Mac display to maximum brightness — XDR brightness boost makes everything easier to see"
-**Key features:** XDR brightness boost with linear gamma scaling, dynamic headroom adaptation, hardware backlight max, works with Liquid Retina XDR and Pro Display XDR
+- **SEO:** descriptive title and description; one clear H1; semantic sections; canonical and language links; version-specific downloads; accessible image alternatives; social metadata; sitemap; static HTML with no JavaScript required for product information.
+- **AEO:** concise, visible FAQs answer what the product does, feature differences, compatibility, sleep/login recovery, headroom, color effects, price, and shortcuts. Keep FAQ structured data identical to the visible answers.
+- **GEO:** consistent product/version/developer facts across the site, README, release notes, and `llms.txt`; a real attributed creator quote; clear constraints and authoritative documentation links. `llms.txt` is a supplemental summary, not a ranking guarantee.
+- Use SoftwareApplication, WebSite, and FAQPage structured data without fabricated reviews or ratings. Structured data must describe visible content. FAQ markup does not guarantee a Google rich result.
+- Submit `https://chiefinnovator.github.io/macedgelight/sitemap.xml` through an authorized Google Search Console or Bing Webmaster Tools property when available. Do not claim a submission was made unless verified.
+- `robots.txt` is effective at the hostname root, not the `/macedgelight/` project path. This repository does not own the hostname-root robots configuration; use page-level index/follow metadata and verify crawl access rather than publishing an ineffective project-level robots file.
+- Measure release downloads and GitHub traffic. Search rankings and AI citations require recrawling and are not guaranteed.
 
-### 5. Multi-Monitor Professionals (Secondary)
+Google states that ordinary SEO practices apply to AI Overviews and AI Mode and that there is no special AI schema or required AI text file: [AI features and your website](https://developers.google.com/search/docs/appearance/ai-features).
 
-**Who:** Traders, editors, developers with 2+ screens
-**Pain point:** Visual separation between monitors, ambient lighting across a full setup
-**Hook:** "Light up one monitor or all of them — adapts as you plug in and unplug displays"
-**Key features:** Per-monitor or all-monitors mode, auto-detection of display changes
+## Release Checklist
 
-## Key Messages
+1. Match app, website, README, plain-text summary, schema, and release-note versions.
+2. Run unit tests and the appropriate live hardware checks; distinguish tested code from physical sleep/logout testing.
+3. Verify universal binary architectures, Developer ID signature, notarization, artifact integrity, and bundled version.
+4. Publish GitHub release assets before the website’s download links go live.
+5. Verify the Pages deployment, download links, sitemap, FAQ/schema parity, and mobile/reflow accessibility.
 
-| Audience | Message |
-|---|---|
-| Streamers | "Your viewers will notice. A professional ambient glow that shows up on camera — or stays hidden. Your choice." |
-| Presenters | "Frame your demo. Spotlight your cursor. Hide the clutter. Present like a pro." |
-| Low Vision | "One click to push your display to peak brightness. XDR boost makes everything easier to see." |
-| Developers | "Late night coding, meet warm ambient light. Your eyes will thank you." |
-| General | "The simplest way to make your Mac look stunning — and brighter than ever." |
+## Follow-up Content
 
-## Content Strategy
+Potential topics, not commitments or already-published campaigns:
 
-### GitHub README (Done)
+- A first-person account of why Richard uses screen brightness to help see his Mac.
+- A two-feature walkthrough: screen ring light for a call, brightness boost for everyday screen use.
+- A practical explanation of supported displays, variable EDR headroom, and what happens after sleep.
 
-- Marketing-first README with use case table, clear value propositions
-- Branded footer with MILL5, MVP, podcast links
-- Download CTA at bottom
-
-### Blog Posts / Articles
-
-1. **"How I Built MacEdgeLight with AI in One Session"** — Dev story for Hacker News, Dev.to, Medium. Shows the Claude Code workflow. Links to podcast.
-2. **"5 Ways to Make Your Mac Desktop Look Stunning for Presentations"** — Listicle format targeting presenters. MacEdgeLight as the hero item.
-3. **"The Best Free Tools for Twitch Streamers on Mac"** — Round-up style targeting streaming community. SEO play.
-
-### Social Media
-
-**Platforms:** Twitter/X, LinkedIn, Mastodon, Reddit (r/macapps, r/Twitch, r/swift)
-
-**Content types:**
-- 15-second screen recording showing the glow effect with bloom
-- Before/after desktop screenshots
-- "Built this with AI" developer story thread
-- Demo GIF showing cursor reveal during a presentation
-
-**Hashtags:** #macOS #SwiftDev #ambient #streamer #presentation #opensource
-
-### Podcast Cross-Promotion
-
-- Feature MacEdgeLight in an Inventing Fire with AI episode
-- "Building a Mac app with AI from scratch" episode angle
-- Show the development process, decisions made, Claude Code workflow
-
-### Video Content
-
-1. **60-second demo video** — Screen recording showing: light on, adjust brightness, bloom mode, cursor reveal, hide icons, multi-monitor. Post to Twitter, LinkedIn, YouTube Shorts.
-2. **5-minute walkthrough** — Full feature tour for YouTube. Target "mac utilities" and "mac customization" search terms.
-3. **Stream setup tutorial** — "How to add ambient lighting to your Twitch stream on Mac" — target streaming audience specifically.
-
-## Distribution Channels
-
-| Channel | Action | Priority |
-|---|---|---|
-| GitHub Releases | DMG + zip, already live | Done |
-| Hacker News | "Show HN: MacEdgeLight — ambient edge glow for macOS" | High |
-| Reddit r/macapps | Post with screenshots | High |
-| Reddit r/swift | Dev story angle | Medium |
-| Twitter/X | Demo GIF + thread | High |
-| LinkedIn | Professional angle (presentations) | Medium |
-| Product Hunt | Launch with demo video | High |
-| Homebrew Cask | Submit a cask formula for easy install | Medium |
-| MacUpdate / Softpedia | Submit for listing | Low |
-
-## Launch Sequence
-
-### Week 1: Soft Launch
-
-- [x] GitHub repo live with polished README
-- [x] v1.0 release with DMG + zip
-- [ ] Record 60-second demo video
-- [ ] Create 3-4 screenshots (bloom, cursor reveal, multi-monitor, control bar)
-- [ ] Post to Reddit r/macapps
-
-### Week 2: Community Launch
-
-- [ ] Submit to Hacker News (Show HN)
-- [ ] Twitter/X thread with demo GIF
-- [ ] LinkedIn post (presentation angle)
-- [ ] Cross-post demo video to YouTube Shorts
-
-### Week 3: Content Push
-
-- [ ] Publish blog post ("Built with AI")
-- [ ] Podcast episode featuring MacEdgeLight
-- [ ] Submit to Product Hunt
-
-### Week 4: Sustained
-
-- [ ] Homebrew cask submission
-- [ ] Respond to issues and feedback
-- [ ] Plan v1.1 features based on community feedback
-
-## Metrics to Track
-
-- GitHub stars and forks
-- Release download counts (DMG + zip)
-- GitHub traffic (views, clones, referrers)
-- Social media engagement on demo posts
-- Hacker News / Reddit upvotes and comments
-- Product Hunt upvotes
-
-## Competitive Landscape
-
-| Product | Platform | Differentiator |
-|---|---|---|
-| Windows Edge Light (Hanselman) | Windows | Original inspiration. Windows only. |
-| MacOSEdgeLight (chrisdoc) | macOS (Rust) | No bloom, no cursor reveal, no persistence, no animations, no screen capture toggle. |
-| Physical ring lights | Hardware ($30-100+) | Desk clutter, power cables, fixed position, doesn't travel with laptop. |
-| Hue Sync / LIFX | Hardware | Requires physical LED strips. MacEdgeLight is software-only. |
-| f.lux | macOS | Color temperature only, no border glow effect. |
-| Vivid / BetterDisplay | macOS | XDR brightness only, no ambient glow, no presentation tools. Paid. |
-
-**MacEdgeLight's edge:** The only macOS ambient screen light with XDR brightness boost, bloom mode, cursor reveal, auto menu bar, screen capture toggle, and smooth animations. Free. Native. Lightweight. Combines ambient lighting with display brightness enhancement — no other tool does both. Replaces physical ring lights for screen-focused use cases — no hardware, no cables, travels with your laptop.
-
-## Assets Needed
-
-- [ ] Screenshots (4-5 key scenarios)
-- [ ] 60-second demo video (screen recording)
-- [ ] Demo GIF (10 seconds, looping)
-- [ ] Social media banner image (1200x630 for Twitter/LinkedIn cards)
-- [ ] App icon at various sizes for listings (already generated)
+Publishing social posts or contacting third parties requires a separate instruction; website and release work does not imply that authorization.

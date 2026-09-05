@@ -185,17 +185,19 @@ On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/M
 
 ### Linear Gamma Scaling
 
-The display's gamma transfer table is saved and then scaled by `gammaScale` (1.45x):
+The display's gamma transfer table is replaced with a freshly generated linear ramp scaled by up to `gammaScale` (1.45x):
 
 ```swift
-boostedRed[i] = red[i] * gammaScale
+boosted[i] = Float(i) / Float(count - 1) * safeGammaScale
 ```
 
-This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. Targets 0.225 gamma deviation to match industry standard.
+This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. The ramp is generated from scratch on every apply rather than reading the live LUT, so a crashed run, dirty sleep cycle, or re-entrant activation cannot double-scale an already boosted table.
+
+Each EDR display has its own scale, clamped to 85% of its current headroom (minimum 1.0, maximum 1.45). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
 
 ### Hardware Brightness
 
-Hardware backlight is maximized via private `DisplayServicesSetBrightness` API. Original brightness is saved and restored on deactivation.
+Hardware backlight is intentionally left unchanged. The boost uses only the synthetic gamma ramp plus EDR headroom signaling so toggles apply within a compositor frame and do not inherit the visible ramp/latency of system brightness changes.
 
 ### Constants
 
@@ -203,16 +205,30 @@ Hardware backlight is maximized via private `DisplayServicesSetBrightness` API. 
 |---|---|---|
 | `maxHeadroomCap` | 16.0 | Maximum EDR headroom requested from macOS |
 | `gammaScale` | 1.45 | Linear gamma table multiplier (~0.225 deviation) |
+| `gammaHeadroomSafety` | 0.85 | Fraction of current headroom allowed for gamma scaling |
 
 ### Lifecycle
 
-The overlay window sits at `screenSaver - 1`. `DisplayBrightnessManager` is a singleton with `toggle()`/`restore()` methods. State is persisted via `AppSettings.edrBoosted` and restored on launch. Brightness, gamma, and overlays are all restored on app quit via `applicationWillTerminate`.
+The overlay window sits at `screenSaver - 1` and joins full-screen Spaces. `DisplayBrightnessManager` is a singleton with idempotent `setEnabled(_:)` and `restore()` methods. `AppSettings.edrBoosted` stores user intent, separately from the active renderer. Controls show that persisted preference and indicate when an enabled boost is waiting for a display or session. A user can disable the preference even while no supported display is connected. Deactivation stops rendering and maintenance synchronously, then restores ColorSync and removes overlays. There are no queued gamma writes after teardown.
 
 Availability is checked via `NSScreen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0`.
 
 ### Sleep/Wake Resilience
 
-Listens for `NSWorkspace.didWakeNotification` and rebuilds overlays after a 2-second delay to allow headroom values to stabilize.
+System sleep, display-only sleep, screen lock, and user-session deactivation suspend the renderer without clearing `AppSettings.edrBoosted`. A `.common` main-run-loop timer checks recovery eligibility every 0.5 seconds without a retry limit, including when an EDR display is initially unavailable. Wake and display wake allow 2 seconds to settle; unlock and session activation allow 0.75 seconds. Overlapping events cannot shorten an existing settle period. Notification handlers pass typed events through one recovery-state transition function. Repeated start/stop calls are idempotent, and termination stops recovery before other cleanup. Notifications suspend immediately, and `CGSessionCopyCurrentDictionary` must also report a logged-in, on-console, unlocked session before reactivation. A user toggle off, a new suspension, or app stop prevents recovery.
+
+Display topology changes rebuild EDR overlays and refresh gamma; headroom-only changes do not rebuild them. Each render target owns its display ID, layer, headroom, and last submission timestamp. The Metal display-link thread uses a synchronized snapshot and never reads AppKit screens or writes gamma. Stale callbacks cannot update a removed or replaced target. Maintenance monitors submissions for each overlay and rebuilds after a 2-second stall. If display-link creation/start fails, maintenance provides fallback frame submissions. The layer retains EDR opt-in while active and renders within current headroom (capped at 16). Headroom notifications refresh the synchronized render snapshot without tearing down the EDR context. Gamma also respects current headroom.
+
+Actual logout terminates the app. Enable **Launch at Login** for automatic restoration in the next user session. The app does not boost the login window or a sleeping display, and macOS retains control over thermal, power, and brightness limits.
+
+Manual hardware validation (required beyond unit tests): leave boost enabled through repeated system sleep/wake, display-only sleep, lock/unlock, fast user switching, logout/login with Launch at Login enabled, full-screen Spaces, and external-display disconnect/reconnect. Verify that disabling during recovery stays off, different displays recover independently, and a sustained session does not fade after a ColorSync reset. Check gamma/profile restoration after quitting. These physical transitions are not simulated by unit tests.
+
+### Boost Regression Checks
+
+- `make test` covers all 24 orderings of system wake, display wake, unlock, and session activation; 1,000 simulated sleep cycles; delayed session/display availability; cancellation; and gamma safety across rising/falling headroom.
+- `bash scripts/test-boost-hardware.sh` compiles the production brightness manager into a standalone harness. Quit MacEdgeLight first. The harness temporarily activates boost without changing saved preferences, verifies actual gamma readback, forces ColorSync resets in normal and event-tracking run-loop modes, samples gamma for 30 seconds, and checks that shutdown leaves the restored LUT unchanged for 2 seconds. It restores ColorSync on completion, a caught test failure, or ordinary SIGINT/SIGTERM cancellation. Do not force-kill the harness while it is changing the display.
+- `bash scripts/test-boost-hardware.sh --thread-sanitizer` runs the same live rendering checks with race detection enabled. This validates only paths exercised on the connected display; it does not simulate sleep, logout, GPU failure, or cable removal.
+- For release acceptance, run at least 10 physical sleep/wake and lock/unlock cycles, then a two-hour session covering full-screen apps, normal menu use, and AC/battery changes. Record recovery time, live headroom, gamma-write failures, CPU/memory growth, and any visible fade or clipping. A stable gamma readback is not a measurement of physical luminance; fixed-brightness verification requires a meter and controlled conditions.
 
 ## EDR Diagnostics Window
 
@@ -319,14 +335,15 @@ Generated programmatically by `generate_icon.swift`. Deep blue-purple gradient b
 
 ### Code Signing & Notarization
 
-Signed with Developer ID Application certificate (MILL5, LLC) and notarized by Apple. Users get zero Gatekeeper warnings on launch.
+Release distribution uses Xcode automatic signing with MILL5 (`FS6453639M`), Hardened Runtime, and registered App ID `com.richardcrane.macedgelight`. Developer ID exports are notarized by Apple and checked with Gatekeeper before packaging.
 
 ```bash
-make release            # Full pipeline: archive → sign → notarize → staple → DMG + zip
+make release            # Xcode archive → automatic Developer ID signing → notarize → export → package
+make package            # Package a notarized app exported by Organizer into build/export/
 make release-unsigned   # Quick build without signing (for testing)
 ```
 
-Notarization credentials stored in keychain as `MacEdgeLightNotarize` profile.
+Xcode authenticates using the Apple account in Settings → Accounts. Export options are in `scripts/ExportOptions-export.plist` and `scripts/ExportOptions-upload.plist`. A rejected Xcode login must be refreshed in Xcode; the previous `MacEdgeLightNotarize` profile is no longer used. Packaging refuses an export with a mismatched version, invalid signature, missing notarization ticket, or rejected Gatekeeper assessment.
 
 ## File Manifest
 
