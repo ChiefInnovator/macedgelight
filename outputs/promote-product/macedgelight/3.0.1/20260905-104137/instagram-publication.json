@@ -1,0 +1,35 @@
+{
+  "account": "inventingfire_with_ai",
+  "children": [
+    "17919370809430168",
+    "17919370830430168",
+    "17919370860430168",
+    "17919370878430168",
+    "17919370914430168",
+    "17919370935430168"
+  ],
+  "image_urls": [
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-01.jpg",
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-02.jpg",
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-03.jpg",
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-04.jpg",
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-05.jpg",
+    "https://raw.githubusercontent.com/ChiefInnovator/macedgelight/caf420b/outputs/promote-product/macedgelight/3.0.1/20260905-104137/slide-06.jpg"
+  ],
+  "caption": "Light for your calls. Brightness for your screen.\n\nMacEdgeLight 3.0.1 brings a recovery workaround for quick Display Brightness Boost toggles, alongside two independent ways to use light on your Mac:\n\n\u2022 Ring light: a glowing screen border for video calls and recordings, with adjustable brightness, warmth and width.\n\u2022 Display Brightness Boost: use available EDR headroom on compatible displays.\n\n\u201cI am vision impaired and this helps me see my screen.\u201d \u2014 Richard Crane, MacEdgeLight creator, on brightness boost.\n\nWhat changed in 3.0.1? Turning boost back on quickly queues recovery until 30 seconds after turn-off. You can cancel the queued request by turning boost off again. Available brightness still depends on your display and macOS; the workaround does not guarantee physical brightness.\n\nDownload MacEdgeLight 3.0.1 for macOS 13+:\nhttps://chiefinnovator.github.io/macedgelight/\n\n#MacEdgeLight #InventingFireWithAI #MacApps #RingLight #DisplayBrightness",
+  "api_version": "v25.0",
+  "container": "17919370953430168",
+  "publish_attempted": true,
+  "post_id": "17862515358676612",
+  "permalink": "https://www.instagram.com/p/Dc6UrydjHqH/",
+  "timestamp": "2026-09-05T15:50:33+0000",
+  "verified": true,
+  "published_children": [
+    "18096929489563874",
+    "18113834861003916",
+    "18090686366538928",
+    "18425007223149511",
+    "18126466945834589",
+    "18106332995590179"
+  ]
+}

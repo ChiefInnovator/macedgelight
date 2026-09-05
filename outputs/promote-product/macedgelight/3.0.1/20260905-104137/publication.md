@@ -1,5 +1,13 @@
 # Publication status
 
+**LIVE:** [MacEdgeLight 3.0.1 Instagram promotion](https://www.instagram.com/p/Dc6UrydjHqH/), published through Facebook Graph API v25.0 to **@inventingfire_with_ai** on September 5, 2026. Post ID: `17862515358676612`.
+
+Verified via API: account identity, exact caption, carousel type, and six children. Downloaded all six published images and checked their order against the source slides; each retained 1080 × 1350 dimensions and matched at the comparison resolution. Per-slide alt text was submitted during child-container creation. Container IDs and the verified permalink are recorded in `instagram-publication.json`; no credentials are included.
+
+The user clarified that their earlier mobile post was only a test, not this promotion. The browser failures below are historical; this campaign was successfully published once through the API.
+
+## Earlier attempts
+
 Updated September 5, 2026.
 
 ## GitHub
