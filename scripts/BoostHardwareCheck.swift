@@ -27,9 +27,9 @@ enum BoostHardwareCheck {
 
     static func checkRamp(on screen: NSScreen) throws {
         let expectedScale = DisplayBrightnessManager.safeGammaScale(
-            desired: 1.45,
+            desired: 1.55,
             liveHeadrooms: [Float(screen.maximumExtendedDynamicRangeColorComponentValue)],
-            safety: 0.85
+            safety: 0.90
         )
         for channel in try gamma(for: screen) {
             let expected = DisplayBrightnessManager.buildBoostedRamp(scale: expectedScale, count: channel.count)

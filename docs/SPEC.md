@@ -185,7 +185,7 @@ On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/M
 
 ### Linear Gamma Scaling
 
-The display's gamma transfer table is replaced with a freshly generated linear ramp scaled by up to `gammaScale` (1.45x):
+The display's gamma transfer table is replaced with a freshly generated linear ramp scaled by up to `gammaScale` (1.55x):
 
 ```swift
 boosted[i] = Float(i) / Float(count - 1) * safeGammaScale
@@ -193,7 +193,7 @@ boosted[i] = Float(i) / Float(count - 1) * safeGammaScale
 
 This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. The ramp is generated from scratch on every apply rather than reading the live LUT, so a crashed run, dirty sleep cycle, or re-entrant activation cannot double-scale an already boosted table.
 
-Each EDR display has its own scale, clamped to 85% of its current headroom (minimum 1.0, maximum 1.45). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
+Each EDR display has its own scale, clamped to 90% of its current headroom (minimum 1.0, maximum 1.55). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
 
 ### Hardware Brightness
 
@@ -204,8 +204,8 @@ Hardware backlight is intentionally left unchanged. The boost uses only the synt
 | Constant | Value | Purpose |
 |---|---|---|
 | `maxHeadroomCap` | 16.0 | Maximum EDR headroom requested from macOS |
-| `gammaScale` | 1.45 | Linear gamma table multiplier (~0.225 deviation) |
-| `gammaHeadroomSafety` | 0.85 | Fraction of current headroom allowed for gamma scaling |
+| `gammaScale` | 1.55 | Linear gamma table multiplier (~0.275 deviation) |
+| `gammaHeadroomSafety` | 0.90 | Fraction of current headroom allowed for gamma scaling |
 
 ### Lifecycle
 
