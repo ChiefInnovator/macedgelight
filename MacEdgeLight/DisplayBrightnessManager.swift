@@ -54,12 +54,12 @@ final class DisplayBrightnessManager {
     /// Linear gamma scale factor — maps the 0-1 range into 0-gammaScale,
     /// stretching values into the EDR range. Preserves relative contrast
     /// (unlike power curves which compress midtones).
-    private let gammaScale: Float = 1.45
+    private let gammaScale: Float = 1.55
 
     /// Never exceed this fraction of actual current headroom when applying
     /// gamma boost. Leaves margin for sudden drops (thermal throttling,
     /// auto-brightness) so content doesn't clip to white.
-    private let gammaHeadroomSafety: Float = 0.85
+    private let gammaHeadroomSafety: Float = 0.90
 
     var isAvailable: Bool {
         guard metalDevice != nil, commandQueue != nil else { return false }
