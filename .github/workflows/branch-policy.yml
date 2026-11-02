@@ -1,0 +1,31 @@
+name: Branch policy
+on:
+  pull_request_target:
+    branches: [main, develop]
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+permissions:
+  contents: read
+jobs:
+  branch-policy:
+    name: Branch source policy
+    runs-on: ubuntu-latest
+    steps:
+      # Deliberately no checkout or execution of pull-request code.
+      - name: Validate source repository and branch
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.ref }}
+          SOURCE_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          TARGET_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$SOURCE_REPO" != "$TARGET_REPO" ]]; then
+            echo '::error::Protected branches require a source branch in this repository.'
+            exit 1
+          fi
+          case "$BASE" in
+            main) [[ "$HEAD" == develop ]] || { echo '::error::main accepts only develop.'; exit 1; } ;;
+            develop) [[ "$HEAD" == feature/* && "$HEAD" != feature/ ]] || { echo '::error::develop accepts only feature/<name>.'; exit 1; } ;;
+            *) echo '::error::Unexpected target branch.'; exit 1 ;;
+          esac
