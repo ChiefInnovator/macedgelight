@@ -1,6 +1,6 @@
 # MacEdgeLight — Technical Specification
 
-Version 1.8 | April 2026 | Richard Crane
+App version 3.0.4 | November 2026 | Richard Crane
 
 ## Overview
 
@@ -252,7 +252,7 @@ Buttons are split into two groups separated by a thin vertical divider:
 
 **Light-dependent** (dimmed at 40% alpha when light is off): brightness up/down, color warmer/cooler, border thicker/thinner, next monitor, all monitors, menu bar mode, cursor reveal, screen capture
 
-**Always-active**: toggle light, XDR brightness, magnifier, desktop icons, launch at login, reset, quit
+**Always-active**: toggle light, XDR brightness, magnifier, desktop icons, reset, hide controls; Launch at Login and Quit are menu commands
 
 All boolean menu toggles show ON/OFF and checkmarks from the current settings: ring light, all monitors, cursor reveal, magnifier, screen capture, hidden desktop icons, controls visibility, and Launch at Login. Boost distinguishes ON, OFF, unsupported, and WAITING; a pending request stays cancellable. Menu-bar mode names Below/Extend/Auto explicitly. The status bar bulb uses filled/outline icons and an ON/OFF tooltip for the ring light.
 
@@ -260,8 +260,8 @@ Menu state refreshes after settings changes and when opening the menu, so startu
 
 ### Button Types
 
-- **NSButton** — Standard click buttons (toggle light, monitors, quit, etc.)
-- **RepeatButton** (custom subclass) — Fires action on press, then repeats fine-step closure at 35ms intervals after 250ms hold delay. Uses `window.nextEvent(matching:until:inMode:dequeue:)` for mouse tracking.
+- **NSButton** — Standard click buttons (monitors, reset, hide controls, etc.)
+- **RepeatButton** (custom subclass) — Fires action on press, then repeats fine-step closure at 35ms intervals after 250ms hold delay. Uses native `NSButton`/cell tracking with a fine-action Timer in `.common` run-loop mode. Release, pointer exit, disable, hide/detach, panel auto-hide, order-out and close cancel permanently until a new press. Keyboard/accessibility activation performs one coarse action. The six adjustment tooltips and accessibility help explain click, hold for fine steps, and moving away to stop; accessible names stay concise.
 - **DoubleClickButton** (custom subclass) — Fires normal action on single click, calls `onDoubleClick` closure on double-click. Used for lightbulb (toggle / reset).
 
 ### Dynamic Background
@@ -278,14 +278,14 @@ When the light is off, the background resets to the baseline dark background (0.
 
 ### Baseline Background
 
-The control panel has a persistent dark background (`NSColor(white: 0.1, alpha: 0.95)`) using `.dark` material for readability against any desktop. The dynamic glow overlap calculation increases opacity further when the edge light is bright and thick.
+The panel uses active `.hudWindow` material with behind-window blending and a separate background layer. At setup and with the ring off, the layer is `NSColor(white: 0.1, alpha: 0.95)`. With the ring on, the overlap formula replaces that layer with 0.05 white and alpha 0–0.85 (0.16 at default ring settings). Material still contributes the backdrop; source arithmetic alone does not establish rendered contrast.
 
 ## Multi-Monitor
 
 - `MonitorManager` queries `NSScreen.screens` and creates one `EdgeLightOverlayWindow` per screen
 - Each overlay is sized to its screen's `frame`
 - Screen changes detected via `NSApplication.didChangeScreenParametersNotification`
-- On change: validate monitor index, recreate all overlays, reposition control panel
+- On change: validate monitor index and reposition control panel; resize existing overlays when display IDs are unchanged, recreate them when the topology changes
 
 ## Cursor Tracking
 
@@ -295,7 +295,7 @@ Timer polls `NSEvent.mouseLocation` and converts to view-local coordinates. Sets
 
 ### Menu Bar Auto-Reveal (30fps)
 
-Timer polls cursor position and checks if `mouseLocation.y >= screen.visibleFrame.maxY`. When cursor enters the menu bar zone, sets `topInset = menuBarHeight` which triggers animated retraction. When cursor leaves, sets `topInset = 0`.
+Timer polls cursor position through the production screen-band predicate: X and Y must be within the screen’s half-open frame bounds, and Y must be at or above `screen.visibleFrame.maxY`. This excludes adjacent/stacked displays and zero-height menu bands. When cursor enters the menu bar zone, sets `topInset = menuBarHeight` which triggers animated retraction. When cursor leaves, sets `topInset = 0`.
 
 ## Display Quality
 
@@ -309,13 +309,15 @@ Gradients use `window?.screen?.colorSpace?.cgColorSpace` instead of `CGColorSpac
 
 ## Global Hotkeys
 
-Registered via `HotkeyManager` using Carbon Event Manager APIs:
+`HotkeyManager` uses local/global `NSEvent` key-down monitors with Carbon key-code constants:
 
 | Shortcut | Action |
 |---|---|
 | Cmd + Shift + L | Toggle light on/off |
-| Cmd + Shift + Up | Increase brightness |
-| Cmd + Shift + Down | Decrease brightness |
+| Cmd + Shift + Up | Increase ring brightness |
+| Cmd + Shift + Down | Decrease ring brightness |
+| Cmd + Shift + B | Toggle display brightness boost |
+| Five Q taps within two seconds, no modifiers | Panic quit |
 
 ## Build & Release
 

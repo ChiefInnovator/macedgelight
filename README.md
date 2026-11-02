@@ -1,10 +1,10 @@
-# MacEdgeLight 3.0.3
+# MacEdgeLight 3.0.4
 
 **Light for your calls. Brightness for your screen.**
 
 MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-[Download version 3.0.3](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.3) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.3)
+[Download version 3.0.4](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.4) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.4)
 
 ![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
 
@@ -30,9 +30,9 @@ For people who benefit from additional brightness, seeing text and everyday scre
 
 Extra brightness helps some people with low vision. Results depend on your vision, display, settings, and available headroom. MacEdgeLight also includes a separate magnifier loupe for inspecting details under the cursor.
 
-## Included in Version 3.0.3
+## Included in Version 3.0.4
 
-New in this patch: a higher display brightness boost ceiling, with gamma scaling capped at 1.55 and 90% of each display’s current EDR headroom. These values describe gamma scaling, not a measured increase in physical brightness. [Full release notes](docs/RELEASE_NOTES_3.0.3.md).
+New in this patch: restored hold-to-repeat fine adjustments, reliable cancellation, clearer accessible control help, and a fix for Auto menu-bar reveal on vertically stacked displays. Display brightness boost tuning is unchanged. [Full release notes](docs/RELEASE_NOTES_3.0.4.md).
 
 - **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
 - **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
@@ -78,7 +78,7 @@ New in this patch: a higher display brightness boost ceiling, with gamma scaling
 
 **Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-1. Download the [3.0.3 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.3/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.3/MacEdgeLight.zip).
+1. Download the [3.0.4 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.4/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.4/MacEdgeLight.zip).
 2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
 3. Open MacEdgeLight and use its menu-bar icon or floating controls.
 4. Enable **Launch at Login** if you want it to return automatically after signing in.
@@ -116,6 +116,13 @@ The source is available under [PolyForm Strict 1.0.0](LICENSE). It is free for u
 ## Rapid brightness toggles
 
 MacEdgeLight uses a conservative workaround for displays that fail to regain brightness after a rapid off/on toggle. Turning boost off restores ColorSync immediately. Re-enabling within 30 seconds queues recovery until that off interval ends. The menu shows **Waiting**, and the toolbar shows an hourglass with a countdown tooltip. Turning it off again cancels recovery. This interval is based on observed behavior, not an Apple timing guarantee; it does not promise a fixed physical brightness.
+
+## Development and design
+
+Changes flow through `feature/<name>` → `develop` → `main`; see the [protected branch workflow](docs/BRANCH_WORKFLOW.md).
+Project-local [Google EGM](https://github.com/google/elephant-goldfish-model) and [Impeccable](https://github.com/pbakaus/impeccable) skills are installed in `.agents/skills`, with EGM personas/standards alongside them.
+The [whole-product design](docs/design/design_draft.md), [fresh Goldfish review](docs/design/consolidated_review_report.md), and [finding resolutions](docs/design/goldfish_resolution.md) record the current review work.
+Product and visual context live in [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
 
 ## Release version consistency
 

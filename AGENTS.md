@@ -1,14 +1,25 @@
 # MacEdgeLight Agent Guide
 
-Repository instructions for Codex. Keep this guide aligned with the implementation and `docs/SPEC.md`; `CLAUDE.md` provides companion guidance for Claude Code.
+Repository instructions for Codex. Keep this guide aligned with the implementation and `docs/SPEC.md`.
 
 ## Working Rules
 
 - Keep changes focused on the requested task and preserve existing uncommitted work.
 - Leave no untracked files: stage new project files and explicitly ignore local/generated files. Check `git ls-files --others --exclude-standard` before finishing; do not hide source files with ignore rules.
-- Never run `git rebase`. If branches diverge, stop and ask.
+- Never run `git rebase`. Resolve divergence with merge commits, preserving both branches.
 - Do not add `Co-Authored-By` or AI-attribution lines to commits.
 - Verify behavior with appropriate checks and distinguish automated results from untested hardware behavior.
+
+## Branch and Review Workflow
+
+- `main` accepts pull requests only from this repository's `develop` branch.
+- `develop` accepts pull requests only from this repository's `feature/<name>` branches.
+- Both branches require `Branch source policy` and `check-version`, resolved review threads, and merge commits. No bypass actors, direct pushes, deletion, or force pushes.
+- Automatic cloud Copilot review targets `develop` only. Monitor reviews after real pushes; never request or re-request them manually.
+- EGM runtime is project-local in `.agents/`: skills, personas, standards, docs, and pinned provenance. Impeccable is in `.agents/skills/impeccable`.
+- Product context is `PRODUCT.md`; visual context is `DESIGN.md` and `.impeccable/design.json`. See `docs/design/` for design and review evidence.
+
+EGM artifact directory: docs/design
 
 ## Project Overview
 

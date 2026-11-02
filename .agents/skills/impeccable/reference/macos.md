@@ -1,0 +1,9 @@
+# Local macOS / AppKit integration
+
+This installation adds a limited desktop route to upstream Impeccable 4.8.0. The engine and bundled native audit/adapt playbooks support web and mobile; they do not validate AppKit. Do not classify an unknown native target as web.
+
+For a macOS desktop target, read PRODUCT.md, DESIGN.md, AGENTS.md, the relevant surface brief, and current AppKit source directly. Skip `context`, `signals`, `detect`, browser `live`/`generate`, responsive web/build-phase checks, and mobile-only native audit/adapt references for this target. Do not load ios.md or replace AppKit with SwiftUI, UIKit, touch navigation, or phone layouts. A separately requested marketing website remains a web target.
+
+For a bare invocation offer source-based `document`, `critique`, or `polish`, scoped to the actual desktop surface. Never auto-run a command. For explicit work, apply the relevant command's general design reasoning only where compatible with these desktop limits; read craft-floor.md before UI edits. Use the native surface's existing AppKit behavior and macOS conventions as authority for menu bar behavior, window ordering, keyboard and pointer access, accessibility labels/help, system colors/materials, reduced motion, and display scaling. Keep utility controls compact and preserve existing functional groups.
+
+Inspect the running native app through available desktop tools when authorized and possible; screenshots establish appearance only for the captured state. A source review or successful build is not visual acceptance. Use `make test` and `make build` for code changes; lifecycle, gamma, XDR, lock/wake, display reconnection, and physical brightness require the repository's specific hardware/manual acceptance. State any missing runtime evidence instead of treating a browser or mobile check as desktop proof.

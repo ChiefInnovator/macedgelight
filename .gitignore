@@ -4,3 +4,6 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 .claude/settings.local.json
+
+# Downloaded Impeccable runtime; launcher fetches the pinned engine.
+.agents/skills/impeccable/scripts/bin/
