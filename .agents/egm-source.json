@@ -1,0 +1,57 @@
+{
+  "repository": "https://github.com/google/elephant-goldfish-model",
+  "revision": "403d8881d62022490637d740657b33f01e321ea8",
+  "license": "Apache-2.0",
+  "installation": "Project-local runtime under .agents; upstream development harness and package builder excluded.",
+  "localModifications": [
+    {
+      "paths": [
+        "skills/egm-review/SKILL.md"
+      ],
+      "reason": "Use filename shortnames for Stage 7/9 and uninterrupted-flow reviewer/standards resolution."
+    },
+    {
+      "paths": [
+        "skills/egm-bootstrap/references/worker-return.schema.json"
+      ],
+      "reason": "Require all three worker contract arrays."
+    },
+    {
+      "paths": [
+        "skills/egm-bootstrap/TEST.md",
+        "skills/egm-brainstorm/TEST.md",
+        "skills/egm-draft/TEST.md",
+        "skills/egm-drift-report/TEST.md",
+        "skills/egm-resolve/TEST.md",
+        "skills/egm-review/TEST.md",
+        "skills/egm-review-loop/TEST.md"
+      ],
+      "reason": "Link upstream harness and local integrity checks; align review-loop no-subagent stop behavior."
+    },
+    {
+      "paths": [
+        "skills/egm-review/test_scenarios.yaml",
+        "skills/egm-review/references/fixtures/feature.md",
+        "skills/egm-review/references/fixtures/implementation.md",
+        "skills/egm-review/references/fixtures/jargon.md",
+        "skills/egm-review/references/fixtures/replication.md",
+        "skills/egm-review/references/fixtures/style.md"
+      ],
+      "reason": "Supply explicit context choices, existing fixture targets, and stage inputs for manual scenarios."
+    },
+    {
+      "paths": [
+        "docs/codex.md",
+        "docs/directory.md",
+        "docs/releases.md",
+        "docs/designs/skill_icons.md",
+        "docs/designs/multi_harness_support.md"
+      ],
+      "reason": "Mark upstream-only packaging/release scope, fix installed icon path and broken upstream links."
+    }
+  ],
+  "integrationFiles": [
+    "INSTALLATION.md",
+    "scripts/check-installation.py"
+  ]
+}

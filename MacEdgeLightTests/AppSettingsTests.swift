@@ -17,6 +17,25 @@ final class AppSettingsTests: XCTestCase {
         super.tearDown()
     }
 
+    @MainActor
+    func testMenuBarBandUsesOnlyOwnScreenAndHalfOpenBounds() {
+        let frame = NSRect(x: -1440, y: -900, width: 1440, height: 900)
+        let visible = NSRect(x: -1440, y: -850, width: 1440, height: 825)
+        for point in [NSPoint(x: -1440, y: -25), NSPoint(x: -1, y: -1)] {
+            XCTAssertTrue(isPointInScreenMenuBar(point, frame: frame, visibleFrame: visible))
+        }
+        for point in [NSPoint(x: -1, y: 0), NSPoint(x: -1, y: 300),
+                      NSPoint(x: 0, y: -1), NSPoint(x: -1441, y: -1),
+                      NSPoint(x: -1, y: -26), NSPoint(x: -1, y: -901)] {
+            XCTAssertFalse(isPointInScreenMenuBar(point, frame: frame, visibleFrame: visible))
+        }
+        XCTAssertFalse(isPointInScreenMenuBar(NSPoint(x: -1, y: -1), frame: frame, visibleFrame: frame))
+        let upper = NSRect(x: -1440, y: 0, width: 1440, height: 900)
+        let upperVisible = NSRect(x: -1440, y: 0, width: 1440, height: 875)
+        XCTAssertTrue(isPointInScreenMenuBar(NSPoint(x: -1, y: 875), frame: upper, visibleFrame: upperVisible))
+        XCTAssertFalse(isPointInScreenMenuBar(NSPoint(x: -1, y: 900), frame: upper, visibleFrame: upperVisible))
+    }
+
     func testResetToDefaultsRestoresKnownValues() {
         let s = AppSettings.shared
 
@@ -154,6 +173,136 @@ final class AppSettingsTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testToolbarRepeatActionsUseCoarseThenFineStepsAndClamps() throws {
+        let manager = EdgeLightManager() // Never start: no overlays or physical boost.
+        let panel = ControlPanelWindow(manager: manager)
+        defer { panel.cancelRepeatingAdjustments(); panel.close() }
+        AppSettings.shared.isLightOn = true
+        panel.updateToggleStates()
+        panel.orderFront(nil)
+        let controls = toolbarButtons(in: try XCTUnwrap(panel.contentView))
+        let cases: [(String, ReferenceWritableKeyPath<AppSettings, Double>, Double, Double, Double, Double)] = [
+            ("sun.min", \.brightness, 1, -0.15, -0.025, 0.2),
+            ("sun.max", \.brightness, 1, 0.15, 0.025, 2),
+            ("flame", \.colorTemperature, 0.5, 0.1, 0.015, 1),
+            ("snowflake", \.colorTemperature, 0.5, -0.1, -0.015, 0),
+            ("rectangle.compress.vertical", \.borderWidth, 60, -10, -2, 10),
+            ("rectangle.expand.vertical", \.borderWidth, 60, 10, 2, 150)
+        ]
+        for (identifier, path, initial, coarse, fine, limit) in cases {
+            let button = try XCTUnwrap(controls.first { $0.accessibilityIdentifier() == identifier } as? RepeatButton)
+            AppSettings.shared[keyPath: path] = initial
+            button.performClick(nil) // Keyboard / accessibility activation stays a single coarse action.
+            XCTAssertEqual(AppSettings.shared[keyPath: path], initial + coarse, accuracy: 0.0001)
+            XCTAssertNil(button.repeatTimer)
+            AppSettings.shared[keyPath: path] = initial
+            button.beginRepeating()
+            XCTAssertEqual(AppSettings.shared[keyPath: path], initial + coarse, accuracy: 0.0001)
+            let timer = try XCTUnwrap(button.repeatTimer)
+            XCTAssertEqual(timer.timeInterval, 0.035, accuracy: 0.0001)
+            XCTAssertEqual(timer.fireDate.timeIntervalSinceNow, 0.25, accuracy: 0.05)
+            button.repeatTick()
+            XCTAssertEqual(AppSettings.shared[keyPath: path], initial + coarse + fine, accuracy: 0.0001)
+            AppSettings.shared[keyPath: path] = limit
+            button.repeatTick()
+            XCTAssertEqual(AppSettings.shared[keyPath: path], limit, accuracy: 0.0001)
+            button.cancelRepeating()
+            button.cancelRepeating()
+            let saved = AppSettings.shared[keyPath: path]
+            timer.fire() // Previously scheduled production callback after cancellation.
+            button.repeatTick()
+            XCTAssertEqual(AppSettings.shared[keyPath: path], saved)
+        }
+        XCTAssertEqual(controls.compactMap { $0 as? RepeatButton }.count, 6)
+    }
+
+    @MainActor
+    func testRepeatCancellationRoutesRejectPendingTicksAndReentry() throws {
+        let routes = ["release", "exit", "disable", "hide", "detach", "ancestor hide", "orderOut", "close", "autoHide"]
+        for route in routes {
+            let manager = EdgeLightManager()
+            let panel = ControlPanelWindow(manager: manager)
+            defer { panel.cancelRepeatingAdjustments(); panel.close() }
+            AppSettings.shared.isLightOn = true
+            AppSettings.shared.brightness = 1
+            panel.updateToggleStates()
+            panel.orderFront(nil)
+            let button = try XCTUnwrap(toolbarButtons(in: try XCTUnwrap(panel.contentView))
+                .first { $0.accessibilityIdentifier() == "sun.max" } as? RepeatButton)
+            button.beginRepeating()
+            let timer = try XCTUnwrap(button.repeatTimer)
+            XCTAssertEqual(AppSettings.shared.brightness, 1.15, accuracy: 0.0001)
+            switch route {
+            case "release":
+                button.cell?.stopTracking(last: .zero, current: .zero, in: button, mouseIsUp: true)
+            case "exit":
+                let cell = try XCTUnwrap(button.cell)
+                let start = NSPoint(x: 10, y: 10)
+                let middle = NSPoint(x: 15, y: 15)
+                let inside = NSPoint(x: 20, y: 20)
+                let outside = NSPoint(x: -1, y: -1)
+                XCTAssertTrue(cell.startTracking(at: start, in: button), "Native cell must opt into drag tracking")
+                XCTAssertTrue(cell.continueTracking(last: start, current: middle, in: button), "First drag must keep tracking")
+                XCTAssertTrue(cell.continueTracking(last: middle, current: inside, in: button), "Second drag must keep tracking")
+                XCTAssertNotNil(button.repeatTimer, "In-bounds movement must preserve the hold")
+                XCTAssertTrue(cell.continueTracking(last: inside, current: outside, in: button), "Exit cancels repetition while native tracking consumes release")
+                XCTAssertNil(button.repeatTimer, "Exit must cancel immediately")
+                XCTAssertTrue(cell.continueTracking(last: outside, current: inside, in: button))
+                button.highlight(true) // Reentry cannot restart this press.
+            case "disable":
+                AppSettings.shared.isLightOn = false
+                panel.updateToggleStates()
+            case "hide": button.isHidden = true
+            case "detach": button.removeFromSuperview()
+            case "ancestor hide": button.superview?.isHidden = true
+            case "orderOut": panel.orderOut(nil)
+            case "close": panel.close()
+            default: panel.autoHide()
+            }
+            timer.fire()
+            button.repeatTick()
+            XCTAssertEqual(AppSettings.shared.brightness, 1.15, accuracy: 0.0001, route)
+            XCTAssertNil(button.repeatTimer, route)
+        }
+    }
+
+    @MainActor
+    func testToolbarActionsHaveStableAccessibleNamesAndModeValues() throws {
+        let manager = EdgeLightManager()
+        let panel = ControlPanelWindow(manager: manager)
+        defer { panel.close() }
+        let controls = toolbarButtons(in: try XCTUnwrap(panel.contentView))
+        XCTAssertEqual(controls.count, 17)
+        let repeatIdentifiers: Set<String> = ["sun.min", "sun.max", "flame", "snowflake",
+                                               "rectangle.compress.vertical", "rectangle.expand.vertical"]
+        for button in controls {
+            XCTAssertFalse((button.accessibilityLabel() ?? "").isEmpty)
+            let repeats = repeatIdentifiers.contains(button.accessibilityIdentifier() ?? "")
+            if repeats {
+                XCTAssertEqual(button.accessibilityHelp(), "Click to adjust; hold for fine steps. Move away to stop.")
+                XCTAssertTrue(button.toolTip?.contains("hold for fine steps") == true)
+                XCTAssertFalse(button.accessibilityLabel()?.contains("hold") == true)
+            } else {
+                XCTAssertFalse(button.accessibilityHelp()?.contains("hold for fine steps") == true)
+                XCTAssertFalse(button.toolTip?.contains("hold for fine steps") == true)
+            }
+        }
+        XCTAssertEqual(controls.filter { repeatIdentifiers.contains($0.accessibilityIdentifier() ?? "") }.count, 6)
+        let mode = try XCTUnwrap(controls.first { $0.accessibilityIdentifier() == "menubar.rectangle" })
+        for (index, value) in ["Below", "Extend", "Auto"].enumerated() {
+            AppSettings.shared.menuBarMode = index
+            panel.updateToggleStates()
+            XCTAssertEqual(mode.accessibilityLabel(), "Menu Bar Mode")
+            XCTAssertEqual(mode.accessibilityValue() as? String, value)
+        }
+    }
+
+    @MainActor
+    private func toolbarButtons(in view: NSView) -> [NSButton] {
+        (view as? NSButton).map { [$0] } ?? view.subviews.flatMap { toolbarButtons(in: $0) }
+    }
+
 }
 
 /// Captures the full AppSettings state so tests can restore it after mutating.
@@ -171,8 +320,13 @@ private struct SettingsSnapshot {
     let borderWidth: Double
     let magnifierEnabled: Bool
     let edrBoosted: Bool
+    let launchAtLogin: Bool
+    let domainName: String
+    let persistentDomain: [String: Any]?
 
     static func capture() -> SettingsSnapshot {
+        let domainName = Bundle.main.bundleIdentifier!
+        let persistentDomain = UserDefaults.standard.persistentDomain(forName: domainName)
         let s = AppSettings.shared
         return SettingsSnapshot(
             brightness: s.brightness,
@@ -187,7 +341,10 @@ private struct SettingsSnapshot {
             visibleInCapture: s.visibleInCapture,
             borderWidth: s.borderWidth,
             magnifierEnabled: s.magnifierEnabled,
-            edrBoosted: s.edrBoosted
+            edrBoosted: s.edrBoosted,
+            launchAtLogin: s.launchAtLogin,
+            domainName: domainName,
+            persistentDomain: persistentDomain
         )
     }
 
@@ -206,5 +363,12 @@ private struct SettingsSnapshot {
         s.borderWidth = borderWidth
         s.magnifierEnabled = magnifierEnabled
         s.edrBoosted = edrBoosted
+        s.launchAtLogin = launchAtLogin
+        // Setters restore the singleton; restore exact disk state last, including missing keys.
+        if let persistentDomain {
+            UserDefaults.standard.setPersistentDomain(persistentDomain, forName: domainName)
+        } else {
+            UserDefaults.standard.removePersistentDomain(forName: domainName)
+        }
     }
 }

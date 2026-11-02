@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-02T11:50:49.199975+00:00",
+  "title": "Design System: MacEdgeLight",
+  "extensions": {
+    "shadows": [
+      {
+        "name": "native-window",
+        "value": "NSWindow.hasShadow = true",
+        "purpose": "System-rendered HUD, tooltip and magnifier shadow; no numeric CSS equivalent is asserted."
+      }
+    ],
+    "motion": [
+      {
+        "name": "hud-hover",
+        "value": "0.2s",
+        "purpose": "Native hover and leave opacity animation."
+      },
+      {
+        "name": "hud-auto-hide",
+        "value": "0.5s",
+        "purpose": "Native fade after 3-second idle delay."
+      },
+      {
+        "name": "hud-glow-backdrop",
+        "value": "0.15s",
+        "purpose": "Ring-on backdrop-layer adjustment."
+      },
+      {
+        "name": "hud-rest-backdrop",
+        "value": "0.3s",
+        "purpose": "Ring-off backdrop-layer restoration."
+      },
+      {
+        "name": "tooltip-delay",
+        "value": "0.5s",
+        "purpose": "Delay before tooltip creation."
+      },
+      {
+        "name": "magnifier-tracking",
+        "value": "30Hz",
+        "purpose": "Cursor-following capture updates; source cadence, not a transition recommendation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "site-tablet",
+        "value": "850px"
+      },
+      {
+        "name": "site-phone",
+        "value": "560px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "HUD adjustment (illustration)",
+      "kind": "button",
+      "refersTo": "native-icon-button",
+      "description": "Browser illustration only: 44-point native action represented at 1 CSS pixel per point. SVG is an approximate sun, not the SF Symbol. Does not emulate tracking or native accessibility.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-button\" aria-label=\"Increase ring-light brightness\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12l2 2M4 20l2-2M18 6l2-2\"/></svg></button></div>",
+      "css": ".ds-stage{background:rgba(10%,10%,10%,.95);padding:8px;border-radius:12px;color:white;font:11px system-ui}.ds-button{width:44px;height:44px;border:0;background:transparent;color:white;display:inline-grid;place-items:center}.ds-button:hover{background:rgba(255,255,255,.08)}.ds-button:focus-visible{outline:2px solid white;outline-offset:2px}.ds-button:active{background:rgba(255,255,255,.16)}.ds-button:disabled{color:rgba(255,255,255,.4)}"
+    },
+    {
+      "name": "Disabled ring adjustment (illustration)",
+      "kind": "button",
+      "refersTo": "native-icon-button-disabled",
+      "description": "Illustrates unavailable ring-dependent controls; native disabled tint is separate from AppKit compositing.",
+      "html": "<div class=\"ds-stage\"><button class=\"ds-button\" disabled aria-label=\"Decrease ring-light brightness\"><svg aria-hidden=\"true\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12l2 2M4 20l2-2M18 6l2-2\"/></svg></button></div>",
+      "css": ".ds-stage{background:rgba(10%,10%,10%,.95);padding:8px;border-radius:12px;color:white;font:11px system-ui}.ds-button{width:44px;height:44px;border:0;background:transparent;color:white;display:inline-grid;place-items:center}.ds-button:hover{background:rgba(255,255,255,.08)}.ds-button:focus-visible{outline:2px solid white;outline-offset:2px}.ds-button:active{background:rgba(255,255,255,.16)}.ds-button:disabled{color:rgba(255,255,255,.4)}"
+    },
+    {
+      "name": "Tooltip (illustration)",
+      "kind": "custom",
+      "refersTo": "native-tooltip",
+      "description": "Illustrates source label and padding; no native timing, window shadow or AppKit material reproduction.",
+      "html": "<span class=\"ds-tooltip\">Brightness Up (Cmd+Shift+Up)</span>",
+      "css": ".ds-tooltip{display:inline-block;background:rgba(0,0,0,.85);color:white;padding:4px 8px;font:11px system-ui}"
+    },
+    {
+      "name": "Status-menu state excerpt (illustration)",
+      "kind": "nav",
+      "description": "Text-only illustration of existing ON/OFF and checkmark semantics; the real menu is rendered by NSMenu and follows macOS appearance. Neutral browser styles are preview scaffolding, not native tokens.",
+      "html": "<div class=\"ds-menu\" aria-label=\"Illustrative menu excerpt\"><div>\u2713 Toggle Light \u2014 ON (Cmd+Shift+L)</div><div>Brightness Up (Cmd+Shift+Up)</div><div>Brightness Down (Cmd+Shift+Down)</div></div>",
+      "css": ".ds-menu{font:menu;padding:8px}.ds-menu>div{padding:4px 8px}"
+    },
+    {
+      "name": "Magnifier frame (illustration)",
+      "kind": "custom",
+      "refersTo": "native-magnifier",
+      "description": "Empty-capture rounded outline and crosshair only. The 280px preview height represents native points schematically; this is not captured content, a live magnifier, or display-validation evidence.",
+      "html": "<div class=\"ds-loupe\" aria-label=\"Illustrative empty magnifier frame\"><svg aria-hidden=\"true\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"rgba(255,255,255,.7)\"><path d=\"M0 12h9m6 0h9M12 0v9m0 6v9\"/></svg></div>",
+      "css": ".ds-loupe{height:280px;width:100%;border:2px solid rgba(255,255,255,.5);border-radius:12px;background:rgba(10%,10%,10%,.9);display:grid;place-items:center}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Native floating light controls",
+    "overview": "This is a descriptive name for the existing implementation, not a newly selected visual direction. Compact SF Symbol controls sit in a dark AppKit HUD over the user's desktop. Native menu conventions and a separate click-through magnifier support short, direct tasks while the ring light occupies the display edge.\n\nRecorded from Swift and the static website on 2026-11-02 and reconciled after the accepted focused repairs; palette, material and geometry remain unchanged. The attempted baseline capture did not expose the saved-hidden controls: accessibility inspection saw the capture-excluded overlay and the screenshot was white. There is no usable rendered HUD, contrast, or VoiceOver acceptance evidence. Source-derived values describe implementation, not measured appearance.",
+    "keyCharacteristics": [
+      "Native AppKit material and system-managed menu appearance.",
+      "Compact icon controls with separate ring-dependent and independent groups.",
+      "State conveyed through symbols, enabled state, tooltips, labels, and values.",
+      "A separate website palette that does not redefine native controls."
+    ],
+    "rules": [],
+    "dos": [
+      "Do preserve AppKit, SF Symbols, the HUD dimensions, native window levels, and the two control groups.",
+      "Do distinguish saved boost intent, waiting, active rendering, and unsupported availability.",
+      "Do retain native menu and keyboard paths alongside the icon HUD.",
+      "Do verify contrast, pointer tracking, focus and VoiceOver on the rendered native app before claiming acceptance."
+    ],
+    "donts": [
+      "Don't apply website colors, web typography, or mobile platform guidance to native AppKit controls.",
+      "Don't change HUD opacity or introduce a new palette from source-only contrast speculation.",
+      "Don't describe automated checks, illustrative previews, or marketing imagery as verified live native behavior.",
+      "Don't change gamma, recovery, capture or other display-pipeline behavior as a visual refinement."
+    ]
+  }
+}

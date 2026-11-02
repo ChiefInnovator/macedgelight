@@ -149,8 +149,10 @@ class StatusBarController: NSObject, NSMenuDelegate {
         alert.messageText = "Mac Edge Light - Keyboard Shortcuts"
         alert.informativeText = """
         Toggle Light:  Cmd + Shift + L
-        Brightness Up:  Cmd + Shift + Up
-        Brightness Down:  Cmd + Shift + Down
+        Ring Brightness Up:  Cmd + Shift + Up
+        Ring Brightness Down:  Cmd + Shift + Down
+        Display Brightness Boost:  Cmd + Shift + B
+        Panic Quit:  Tap Q five times within two seconds (no modifiers)
 
         Features:
         - Click-through overlay - won't interfere with your work

@@ -1,5 +1,12 @@
 import Cocoa
 
+/// Own-screen membership uses half-open bounds so adjacent displays never share a point.
+func isPointInScreenMenuBar(_ point: NSPoint, frame: NSRect, visibleFrame: NSRect) -> Bool {
+    point.x >= frame.minX && point.x < frame.maxX
+        && point.y >= frame.minY && point.y < frame.maxY
+        && point.y >= visibleFrame.maxY
+}
+
 class EdgeLightOverlayWindow: NSWindow {
     let edgeLightView: EdgeLightView
     private var cursorTrackingTimer: Timer?
@@ -118,11 +125,9 @@ class EdgeLightOverlayWindow: NSWindow {
         let mouseLocation = NSEvent.mouseLocation
         guard let screen = self.screen ?? NSScreen.main else { return }
 
-        // Cursor is in the menu bar if it's at or above the top of the visible area
-        // and within this screen's horizontal bounds
-        let cursorInMenuBar = mouseLocation.y >= screen.visibleFrame.maxY
-            && mouseLocation.x >= screen.frame.minX
-            && mouseLocation.x <= screen.frame.maxX
+        let cursorInMenuBar = isPointInScreenMenuBar(
+            mouseLocation, frame: screen.frame, visibleFrame: screen.visibleFrame
+        )
 
         if cursorInMenuBar && !menuBarRevealed {
             menuBarRevealed = true

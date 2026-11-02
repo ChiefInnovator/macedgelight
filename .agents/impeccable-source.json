@@ -1,0 +1,18 @@
+{
+  "repository": "https://github.com/pbakaus/impeccable",
+  "skillVersion": "4.8.0",
+  "engineVersion": "0.1.18",
+  "installation": "npx --yes impeccable install -y --providers=codex --scope=project --no-hooks",
+  "binary": "Generated runtime ignored; launcher uses bundled version and checksums.",
+  "localModifications": [
+    {
+      "paths": [
+        "skills/impeccable/SKILL.md",
+        "skills/impeccable/reference/routing.md",
+        "skills/impeccable/reference/macos.md"
+      ],
+      "reason": "Add explicit limited source-based AppKit/macOS routing before engine platform inference; exclude mobile guidance and web-only tooling for desktop targets."
+    }
+  ],
+  "integrationDocumentation": "INSTALLATION.md"
+}
