@@ -1,6 +1,6 @@
 # MacEdgeLight — Technical Specification
 
-App version 3.0.3 | November 2026 | Richard Crane
+App version 3.0.4 | November 2026 | Richard Crane
 
 ## Overview
 
