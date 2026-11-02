@@ -265,21 +265,21 @@ plain chat):
     stage, write the individual report file to the working directory (or your
     harness's artifact directory, if it has one):
     *   **Step 5 (Initial Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
+        subagent) with `Reviewers: [zoom_out]` on `full file` → write
         `zoom_out_report.md`.
     *   **Step 6 (Comprehension Test)**: Spawn the `egm-comprehension`
         subagent directly (not the synthesizer) on `FeatureRange` &
         `DetailedRange` → write its complete result to
         `comprehension_report.md`.
     *   **Step 7 (Critic Review)**: Spawn `egm-synthesizer` (or direct
-        subagents) with `Reviewers: [egm-design, egm-structural, egm-style]` on
+        subagents) with `Reviewers: [design_critic, structural, style]` on
         `FeatureRange` → write `critic_report.md`.
     *   **Step 8 (Intermediate Zoom Out)**: Spawn `egm-synthesizer` (or direct
-        subagent) with `Reviewers: [egm-zoom-out]` on `full file` → write
+        subagent) with `Reviewers: [zoom_out]` on `full file` → write
         `intermediate_zoom_out_report.md`.
     *   **Step 9 (Implementation Readiness Test)**: Spawn `egm-synthesizer` (or
-        direct subagents) with `Reviewers: [egm-implementation-readiness,
-        egm-codebase-details, egm-style]` on `DetailedRange` → write
+        direct subagents) with `Reviewers: [implementation_readiness,
+        codebase_details, style]` on `DetailedRange` → write
         `implementation_readiness_report.md`.
 2.  **Cross-Stage Synthesis & Deduplication**:
     *   Collect all findings across the 5 stage reports.
@@ -348,8 +348,8 @@ plain chat):
 ### Subflow: Critic Review
 
 1.  **Invoke Antagonistic Review Loop**: Invoke `egm-review-loop` in-thread on
-    `FeatureRange` with reviewers `[egm-design, egm-structural, egm-style]` and
-    standards `{"egm-design": "feature-spec-standard", "egm-structural":
+    `FeatureRange` with reviewers `[design_critic, structural, style]` and
+    standards `{"design_critic": "feature-spec-standard", "structural":
     "feature-spec-standard"}`.
 2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
     `critic_report.md` (give its path).
@@ -375,10 +375,10 @@ plain chat):
 ### Subflow: Implementation Readiness Test
 
 1.  **Invoke Antagonistic Review Loop**: Invoke `egm-review-loop` in-thread on
-    `DetailedRange` with reviewers `[egm-implementation-readiness,
-    egm-codebase-details, egm-style]` and standards
-    `{"egm-implementation-readiness": "implementation-readiness-standard",
-    "egm-codebase-details": "implementation-readiness-standard"}`.
+    `DetailedRange` with reviewers `[implementation_readiness,
+    codebase_details, style]` and standards
+    `{"implementation_readiness": "implementation-readiness-standard",
+    "codebase_details": "implementation-readiness-standard"}`.
 2.  **Notify User (No Chat Dumps)**: Notify user that findings are written to
     `implementation_readiness_report.md` (give its path).
 3.  **Terminal Checkpoint Gate**: Present the Stage 9 terminal gate:

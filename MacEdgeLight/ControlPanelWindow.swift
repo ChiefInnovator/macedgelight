@@ -1,5 +1,107 @@
 import Cocoa
 
+// Keep AppKit's tracking loop while observing exits and release directly.
+private final class RepeatButtonCell: NSButtonCell {
+    override func startTracking(at startPoint: NSPoint, in controlView: NSView) -> Bool {
+        // Opt in regardless of NSCell's continuous/drag action configuration.
+        true
+    }
+
+    override func continueTracking(last lastPoint: NSPoint, current currentPoint: NSPoint, in controlView: NSView) -> Bool {
+        if !controlView.bounds.contains(currentPoint) {
+            (controlView as? RepeatButton)?.cancelRepeating()
+        }
+        // Keep native tracking alive through release even after repetition cancels.
+        return true
+    }
+
+    override func stopTracking(last lastPoint: NSPoint, current stopPoint: NSPoint, in controlView: NSView, mouseIsUp flag: Bool) {
+        (controlView as? RepeatButton)?.cancelRepeating()
+        super.stopTracking(last: lastPoint, current: stopPoint, in: controlView, mouseIsUp: flag)
+    }
+}
+
+final class RepeatButton: NSButton {
+    static let holdDelay: TimeInterval = 0.25
+    static let repeatInterval: TimeInterval = 0.035
+    var fineAction: (() -> Void)?
+    private(set) var repeatTimer: Timer?
+    private var repeating = false
+    private var trackingMouse = false
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        cell = RepeatButtonCell(textCell: "")
+    }
+
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+
+    override var isEnabled: Bool {
+        didSet { if !isEnabled { cancelRepeating() } }
+    }
+
+    override var isHidden: Bool {
+        didSet { if isHidden { cancelRepeating() } }
+    }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { cancelRepeating() }
+        super.viewWillMove(toWindow: newWindow)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        cancelRepeating()
+        super.mouseExited(with: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        beginRepeating()
+        trackingMouse = true
+        defer {
+            cancelRepeating()
+            trackingMouse = false
+        }
+        super.mouseDown(with: event)
+    }
+
+    override func sendAction(_ action: Selector?, to target: Any?) -> Bool {
+        // Native release must not repeat the coarse action already sent on press.
+        guard !trackingMouse else { return false }
+        return super.sendAction(action, to: target)
+    }
+
+    func beginRepeating() {
+        cancelRepeating()
+        guard isEnabled, !isHiddenOrHasHiddenAncestor,
+              let window, window.isVisible, window.alphaValue > 0.01 else { return }
+        repeating = true
+        highlight(true)
+        _ = super.sendAction(action, to: target)
+        let timer = Timer(fire: Date(timeIntervalSinceNow: Self.holdDelay),
+                          interval: Self.repeatInterval, repeats: true) { [weak self] _ in
+            self?.repeatTick()
+        }
+        repeatTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    func repeatTick() {
+        guard repeating, isEnabled, isHighlighted, !isHiddenOrHasHiddenAncestor,
+              let window, window.isVisible, window.alphaValue > 0.01 else {
+            cancelRepeating()
+            return
+        }
+        fineAction?()
+    }
+
+    func cancelRepeating() {
+        repeating = false
+        repeatTimer?.invalidate()
+        repeatTimer = nil
+    }
+}
+
 // Button that detects double-click separately from single-click
 private class DoubleClickButton: NSButton {
     var onDoubleClick: (() -> Void)?
@@ -57,6 +159,7 @@ class ControlPanelWindow: NSPanel {
     private let activeColor = NSColor.white
     private var toggleButtons: [String: NSButton] = [:]
     private var lightDependentButtons: [NSButton] = []
+    private var repeatingButtons: [RepeatButton] = []
     private weak var containerView: NSVisualEffectView?
     private var tooltipWindow: NSWindow?
     private var tooltipTimer: Timer?
@@ -156,6 +259,11 @@ class ControlPanelWindow: NSPanel {
                 let db = DoubleClickButton(frame: NSRect(x: 0, y: 0, width: 44, height: 44))
                 db.onDoubleClick = { [weak self] in self?.edgeLightManager?.resetRingLight() }
                 button = db
+            } else if let fineAction = fineAction(for: imageName) {
+                let repeating = RepeatButton(frame: NSRect(x: 0, y: 0, width: 44, height: 44))
+                repeating.fineAction = fineAction
+                repeatingButtons.append(repeating)
+                button = repeating
             } else {
                 button = NSButton(frame: NSRect(x: 0, y: 0, width: 44, height: 44))
             }
@@ -165,6 +273,13 @@ class ControlPanelWindow: NSPanel {
             button.image = NSImage(systemSymbolName: imageName, accessibilityDescription: tooltip)
             button.imageScaling = .scaleProportionallyDown
             button.toolTip = tooltip
+            button.setAccessibilityLabel(imageName == "menubar.rectangle" ? "Menu Bar Mode" : tooltip)
+            button.setAccessibilityIdentifier(imageName)
+            if button is RepeatButton {
+                let help = "Click to adjust; hold for fine steps. Move away to stop."
+                button.toolTip = "\(tooltip) — \(help)"
+                button.setAccessibilityHelp(help)
+            }
             button.addTrackingArea(NSTrackingArea(
                 rect: button.bounds,
                 options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
@@ -232,7 +347,25 @@ class ControlPanelWindow: NSPanel {
         }
     }
 
-    private func autoHide() {
+    func cancelRepeatingAdjustments() {
+        repeatingButtons.forEach { $0.cancelRepeating() }
+    }
+
+    override func orderOut(_ sender: Any?) {
+        cancelRepeatingAdjustments()
+        super.orderOut(sender)
+    }
+
+    override func close() {
+        cancelRepeatingAdjustments()
+        hideTimer?.invalidate()
+        hideTimer = nil
+        hideTooltip()
+        super.close()
+    }
+
+    func autoHide() {
+        cancelRepeatingAdjustments()
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.5
             self.animator().alphaValue = 0.01
@@ -255,7 +388,8 @@ class ControlPanelWindow: NSPanel {
     }
 
     override func mouseExited(with event: NSEvent) {
-        if event.trackingArea?.userInfo?["button"] != nil {
+        if let button = event.trackingArea?.userInfo?["button"] as? NSButton {
+            (button as? RepeatButton)?.cancelRepeating()
             hideTooltip()
         } else {
             NSAnimationContext.runAnimationGroup { context in
@@ -411,7 +545,8 @@ class ControlPanelWindow: NSPanel {
         button.image = NSImage(systemSymbolName: iconName, accessibilityDescription: tooltip)
         button.toolTip = tooltip
         button.state = settings.menuBarMode == 0 ? .off : .on
-        button.setAccessibilityValue(tooltip)
+        button.setAccessibilityLabel("Menu Bar Mode")
+        button.setAccessibilityValue(settings.menuBarMode == 1 ? "Extend" : settings.menuBarMode == 2 ? "Auto" : "Below")
         button.contentTintColor = activeColor
     }
 
@@ -420,6 +555,18 @@ class ControlPanelWindow: NSPanel {
         let x = screenFrame.midX - frame.width / 2
         let y = screenFrame.origin.y + 80
         setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    private func fineAction(for imageName: String) -> (() -> Void)? {
+        switch imageName {
+        case "sun.min": return { [weak self] in self?.edgeLightManager?.decreaseBrightnessFine() }
+        case "sun.max": return { [weak self] in self?.edgeLightManager?.increaseBrightnessFine() }
+        case "flame": return { [weak self] in self?.edgeLightManager?.increaseColorTemperatureFine() }
+        case "snowflake": return { [weak self] in self?.edgeLightManager?.decreaseColorTemperatureFine() }
+        case "rectangle.compress.vertical": return { [weak self] in self?.edgeLightManager?.decreaseBorderWidthFine() }
+        case "rectangle.expand.vertical": return { [weak self] in self?.edgeLightManager?.increaseBorderWidthFine() }
+        default: return nil
+        }
     }
 
     // Single-click actions (also fires on first press for repeat buttons)

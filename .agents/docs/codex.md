@@ -5,6 +5,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Codex integration
 
+> Installation note: packaging, release manifests, and `pytest tests/unit` below belong to the [upstream source checkout](https://github.com/google/elephant-goldfish-model/tree/403d8881d62022490637d740657b33f01e321ea8), not this vendored runtime. See [local installation and checks](../INSTALLATION.md).
+
 ## Install and locate the plugin
 
 Install the whole plugin, including its personas and standards:

@@ -117,6 +117,13 @@ The source is available under [PolyForm Strict 1.0.0](LICENSE). It is free for u
 
 MacEdgeLight uses a conservative workaround for displays that fail to regain brightness after a rapid off/on toggle. Turning boost off restores ColorSync immediately. Re-enabling within 30 seconds queues recovery until that off interval ends. The menu shows **Waiting**, and the toolbar shows an hourglass with a countdown tooltip. Turning it off again cancels recovery. This interval is based on observed behavior, not an Apple timing guarantee; it does not promise a fixed physical brightness.
 
+## Development and design
+
+Changes flow through `feature/<name>` → `develop` → `main`; see the [protected branch workflow](docs/BRANCH_WORKFLOW.md).
+Project-local [Google EGM](https://github.com/google/elephant-goldfish-model) and [Impeccable](https://github.com/pbakaus/impeccable) skills are installed in `.agents/skills`, with EGM personas/standards alongside them.
+The [whole-product design](docs/design/design_draft.md), [fresh Goldfish review](docs/design/consolidated_review_report.md), and [finding resolutions](docs/design/goldfish_resolution.md) record the current review work.
+Product and visual context live in [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
+
 ## Release version consistency
 
 After changing Xcode’s `MARKETING_VERSION`, run `make sync-site-version`. The homepage, search/social metadata, structured data, download links, plain-text guide, and this README use the full `major.minor.patch` version. `make check-site-version`, release packaging, and GitHub Actions check for mismatches. Historical release notes retain their original versions.

@@ -1,5 +1,7 @@
 # Directory packages
 
+> Upstream development workflow: run these commands only in the [pinned EGM source checkout](https://github.com/google/elephant-goldfish-model/tree/403d8881d62022490637d740657b33f01e321ea8). This project vendors the runtime, not the builder or distributions. See [local installation](../INSTALLATION.md).
+
 Build a runtime folder and ZIP using only Python's standard library:
 
 ```sh

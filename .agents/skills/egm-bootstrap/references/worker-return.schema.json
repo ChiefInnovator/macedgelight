@@ -12,7 +12,7 @@
           "invariants": { "type": "array", "items": { "type": "string" } },
           "side_effects": { "type": "array", "items": { "type": "string" } }
         },
-        "required": ["path", "summary"]
+        "required": ["path", "summary", "interface", "invariants", "side_effects"]
       }
     }
   },

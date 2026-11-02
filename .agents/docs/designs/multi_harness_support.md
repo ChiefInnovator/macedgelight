@@ -109,7 +109,7 @@ Before implementation, obtain the contribution-track approval required by
 3. Implement the smallest required adapter and native delegation mapping.
 4. Add offline checks for actual schema, metadata, and resource-path contracts.
 5. Run native installation, isolation, permission, and workflow probes.
-6. Update [the harness guide](../harnesses.md) and [test record](../../TESTING.md)
+6. Update [the harness guide](../harnesses.md) and [upstream test record](https://github.com/google/elephant-goldfish-model/blob/403d8881d62022490637d740657b33f01e321ea8/TESTING.md)
    with evidence and explicit limits. Promote only the tested host.
 
 Do not publish guessed installation commands or mark a host supported while
