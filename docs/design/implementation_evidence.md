@@ -55,3 +55,5 @@ Actual mouse hold/release/reentry, keyboard focus, VoiceOver announcements, desk
 The original review is preserved as a pre-remediation snapshot. No palette/layout/gamma changes follow from these findings, and unresolved physical/assistive-technology checks remain open.
 
 Final Impeccable repair checkpoint: `make test` passed **49 tests, zero failures** and `make build` succeeded. Logs: `/tmp/macedgelight-impeccable-imp2-test.log` and `/tmp/macedgelight-impeccable-imp2-build.log`. The earlier IMP-1 checkpoint also passed 49 tests/build. Runtime installation, workflow syntax, site version and authored whitespace checks pass.
+
+Automatic Copilot review of implementation head `ed8bc7c09f6f211e4095eb3425479fedabed0eb2` completed with one low-severity documentation finding and no further implementation finding: the plan named nonexistent `review_report.md`. The plan now points to the existing `consolidated_review_report.md` and names the actual `.impeccable/design.json` sidecar. The follow-up changes documentation only; existing Swift test/build results remain applicable.
