@@ -1,5 +1,19 @@
 import Cocoa
 
+/// What the boost controls show. Waiting (recovery) outranks a gamma conflict.
+enum BoostStatus: Equatable {
+    case normal
+    case waiting(String)
+    case conflict
+
+    static let conflictMessage = "Another app appears to be changing display gamma. Turn boost off to stop."
+
+    static func resolve(waitingMessage: String?, conflict: Bool) -> BoostStatus {
+        if let waitingMessage { return .waiting(waitingMessage) }
+        return conflict ? .conflict : .normal
+    }
+}
+
 class EdgeLightManager {
     let settings = AppSettings.shared
     private(set) var monitorManager: MonitorManager
@@ -47,6 +61,10 @@ class EdgeLightManager {
         DisplayBrightnessManager.resetGammaToProfile()
 
         DisplayBrightnessManager.shared.setBoostLevel(Float(settings.boostLevel))
+        DisplayBrightnessManager.shared.onGammaConflictChange = { [weak self] in
+            self?.statusBar?.updateEDRMenuState()
+            self?.controlPanel?.updateToggleStates()
+        }
 
         // The persisted preference survives temporary system suspension.
         reconcileBoost()
@@ -351,6 +369,11 @@ class EdgeLightManager {
     func setBoostLevel(_ level: Double) {
         settings.boostLevel = AppSettings.validatedBoostLevel(level)
         DisplayBrightnessManager.shared.setBoostLevel(Float(settings.boostLevel))
+    }
+
+    var boostStatus: BoostStatus {
+        BoostStatus.resolve(waitingMessage: boostRecoveryMessage,
+                            conflict: DisplayBrightnessManager.shared.hasGammaConflict)
     }
 
     var boostRecoveryMessage: String? {

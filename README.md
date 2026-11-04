@@ -32,7 +32,7 @@ Extra brightness helps some people with low vision. Results depend on your visio
 
 ## Included in Version 3.1.0
 
-New in this release: a saved **Boost Strength** menu (10–100%) for display brightness boost. 100% matches earlier releases and all safety clamps are unchanged. [Full release notes](docs/RELEASE_NOTES_3.1.0.md).
+New in this release: a saved **Boost Strength** menu (10–100%) and a conflict warning when another app rewrites display gamma. 100% matches earlier releases and all safety clamps are unchanged. [Full release notes](docs/RELEASE_NOTES_3.1.0.md).
 
 - **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
 - **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
@@ -55,7 +55,7 @@ New in this release: a saved **Boost Strength** menu (10–100%) for display bri
 
 ### Display Brightness Boost
 
-Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier releases; lower levels scale the gamma ramp within the same safety clamp.
+Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier releases; lower levels scale the gamma ramp within the same safety clamp. If another app repeatedly rewrites the display gamma table, the menu and toolbar show a conflict warning (a heuristic, not proof); boost keeps running until you turn it off.
 
 - Separate menu-bar, toolbar, and keyboard controls.
 - Persistent enabled preference and automatic recovery after sleep, unlock, session switching, and reconnection.

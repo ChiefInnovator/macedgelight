@@ -165,3 +165,45 @@ final class BoostStrengthTests: XCTestCase {
         XCTAssertEqual(DisplayBrightnessManager.clampedBoostLevel(.infinity), 1.0)
     }
 }
+
+final class GammaConflictTests: XCTestCase {
+    func testPersistentAfterThreeMismatchesInWindowEvenIfInterleaved() {
+        var t = GammaConflictTracker()
+        t.record(mismatch: true, now: 0)
+        t.record(mismatch: false, now: 0.5)
+        t.record(mismatch: true, now: 1)
+        t.record(mismatch: false, now: 1.5)
+        XCTAssertFalse(t.isPersistent)
+        t.record(mismatch: true, now: 2)
+        XCTAssertTrue(t.isPersistent)
+    }
+
+    func testSpreadOutMismatchesNeverPersist() {
+        var t = GammaConflictTracker()
+        for i in 0..<5 { t.record(mismatch: true, now: Double(i) * 7) }
+        XCTAssertFalse(t.isPersistent)
+    }
+
+    func testClearsOnlyAfterTenQuietSeconds() {
+        var t = GammaConflictTracker()
+        for i in 0..<3 { t.record(mismatch: true, now: Double(i)) }
+        t.record(mismatch: false, now: 11.9)
+        XCTAssertTrue(t.isPersistent)
+        t.record(mismatch: false, now: 12.0)
+        XCTAssertFalse(t.isPersistent)
+    }
+
+    func testDiffersUsesToleranceAndIgnoresMismatchedCounts() {
+        let expected: [Float] = [0, 0.5, 1]
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [expected, expected, expected]))
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 0.501, 1], expected, expected]))
+        XCTAssertTrue(GammaConflictTracker.differs(expected: expected, live: [expected, expected, [0, 0.51, 1]]))
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 1], [0, 1], [0, 1]]))
+    }
+
+    func testStatusPrecedence() {
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: nil, conflict: false), .normal)
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: nil, conflict: true), .conflict)
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: "w", conflict: true), .waiting("w"))
+    }
+}

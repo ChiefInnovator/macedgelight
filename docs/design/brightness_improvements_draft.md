@@ -1,7 +1,7 @@
 # Display brightness boost: improvements for MacEdgeLight 4.0.0
 
 - **Author:** Richard Crane / project engineering
-- **Status:** Revision 2. Applies the Goldfish review in `brightness_improvements_review.md`. Open decisions remain for the owner (see Open Decisions). Phase 1 (adjustable strength, menu-only, stepped) shipped in 3.1.0; Phases 2–3 remain unimplemented pending the review's owner decisions.
+- **Status:** Revision 3. Applies the Goldfish review's recommendation to narrow scope. **Shipped in 3.1.0:** Phase 1 (strength, D1 = menu-only stepped submenu) and Phase 2 (conflict detection, D2 = every tick, D4 = A, keep writing and show the conflict; tracker, status resolver and harness checks are in existing files rather than new ones). **Removed from this design:** thermal/Low Power status (D3), the event log, the diagnostics report, and the known-app list; each needs its own design if wanted. Phase 2's go/no-go hardware run (`scripts/test-boost-hardware.sh`, MacEdgeLight quit) has not been executed yet. The target release and the file table below predate this narrowing.
 - **Date:** 2026-11-04
 - **Target release:** 4.0.0 (next major version). Baseline: 3.0.4 source.
 - **Context:** BrightIntosh (GPL-3.0) was read as a source review only (commit `f6806b8`, 2026-10-08; findings come from one reader and were not independently re-checked). No BrightIntosh code or constants are used; every threshold below was derived here from MacEdgeLight's own timings and harness.

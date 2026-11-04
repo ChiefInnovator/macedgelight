@@ -270,9 +270,16 @@ class StatusBarController: NSObject, NSMenuDelegate {
         edrToggleItem?.isEnabled = supported || desired
         edrToggleItem?.title = supported || desired
             ? "Display Brightness Boost — \(desired ? "ON" : "OFF")" : "Display Brightness Boost — OFF (Not Supported)"
-        let recoveryMessage = edgeLightManager?.boostRecoveryMessage
-        if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost — WAITING" }
-        edrToggleItem?.toolTip = recoveryMessage
+        switch edgeLightManager?.boostStatus ?? .normal {
+        case .waiting(let message):
+            edrToggleItem?.title = "Display Brightness Boost — WAITING"
+            edrToggleItem?.toolTip = message
+        case .conflict:
+            edrToggleItem?.title = "Display Brightness Boost — CONFLICT"
+            edrToggleItem?.toolTip = BoostStatus.conflictMessage
+        case .normal:
+            edrToggleItem?.toolTip = nil
+        }
         let current = AppSettings.shared.boostLevel
         for item in boostStrengthItem?.submenu?.items ?? [] {
             let level = item.representedObject as? Double ?? 0
