@@ -7,3 +7,4 @@ xcuserdata/
 
 # Downloaded Impeccable runtime; launcher fetches the pinned engine.
 .agents/skills/impeccable/scripts/bin/
+.vscode/

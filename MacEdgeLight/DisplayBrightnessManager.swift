@@ -6,6 +6,51 @@ import QuartzCore
 /// synthetic gamma ramp. macOS still controls available EDR headroom.
 /// AppKit and gamma state are owned by the main thread; the display-link thread
 /// only renders the layer/brightness snapshot protected by renderLock.
+/// Classifies repeated external gamma changes for one display. Pure and
+/// time-driven so it can be tested without hardware.
+struct GammaConflictTracker {
+    static let tolerance: Float = 0.002
+    static let window: TimeInterval = 6
+    static let threshold = 3
+    static let clearAfter: TimeInterval = 10
+    static let grace: TimeInterval = 3
+
+    private(set) var isPersistent = false
+    private var mismatches: [TimeInterval] = []
+
+    /// Records one comparison. `persistent` after `threshold` mismatches within
+    /// `window` seconds (not necessarily consecutive); clear after `clearAfter`
+    /// seconds without a mismatch.
+    mutating func record(mismatch: Bool, now: TimeInterval) {
+        if mismatch {
+            mismatches.append(now)
+            mismatches.removeAll { now - $0 > Self.window }
+            if mismatches.count >= Self.threshold { isPersistent = true }
+        } else if isPersistent, let last = mismatches.last, now - last >= Self.clearAfter {
+            isPersistent = false
+            mismatches.removeAll()
+        }
+    }
+
+    /// True if any sample of any channel differs from `expected` beyond tolerance.
+    /// The display may report a different sample count than the 256 we write, so
+    /// `expected` is linearly interpolated to the live count (our ramps are linear).
+    static func differs(expected: [CGGammaValue], live: [[CGGammaValue]]) -> Bool {
+        guard expected.count > 1 else { return false }
+        for channel in live where channel.count > 1 {
+            let last = Float(channel.count - 1)
+            for (i, value) in channel.enumerated() {
+                let position = Float(i) / last * Float(expected.count - 1)
+                let lower = min(Int(position), expected.count - 2)
+                let fraction = position - Float(lower)
+                let target = expected[lower] + (expected[lower + 1] - expected[lower]) * fraction
+                if abs(value - target) > tolerance { return true }
+            }
+        }
+        return false
+    }
+}
+
 final class DisplayBrightnessManager {
     static let shared = DisplayBrightnessManager()
 
@@ -31,6 +76,17 @@ final class DisplayBrightnessManager {
     private var maintenanceTimer: Timer?
     private var configuration: [DisplayConfiguration] = []
     private var gammaErrors: [CGDirectDisplayID: CGError] = [:]
+    /// Last ramp this process successfully wrote, per display (conflict detection).
+    private var lastWrittenRamp: [CGDirectDisplayID: [CGGammaValue]] = [:]
+    private var conflictTrackers: [CGDirectDisplayID: GammaConflictTracker] = [:]
+    /// Comparisons are skipped until this uptime: our own activation, rebuild,
+    /// or ColorSync reset legitimately changes the table.
+    private var conflictGraceUntil: TimeInterval = 0
+
+    /// True while any display shows repeated gamma changes by another process.
+    var hasGammaConflict: Bool { conflictTrackers.values.contains { $0.isPersistent } }
+    /// Called on the main thread when `hasGammaConflict` changes.
+    var onGammaConflictChange: (() -> Void)?
 
     private struct DisplayConfiguration: Equatable {
         let id: CGDirectDisplayID
@@ -60,6 +116,19 @@ final class DisplayBrightnessManager {
     /// gamma boost. Leaves margin for sudden drops (thermal throttling,
     /// auto-brightness) so content doesn't clip to white.
     private let gammaHeadroomSafety: Float = 0.90
+
+    /// User-selected strength, 0.1...1.0. Set by `EdgeLightManager`; the manager
+    /// does not import `AppSettings` so the hardware harness compiles it alone.
+    private(set) var boostLevel: Float = 1.0
+
+    /// Applies a new strength immediately by rewriting the ramp. Does not touch
+    /// overlays, recovery state, or the persisted boost preference.
+    func setBoostLevel(_ level: Float) {
+        precondition(Thread.isMainThread)
+        boostLevel = Self.clampedBoostLevel(level)
+        guard isBoosted, !isChanging else { return }
+        refreshGamma()
+    }
 
     var isAvailable: Bool {
         guard metalDevice != nil, commandQueue != nil else { return false }
@@ -104,6 +173,7 @@ final class DisplayBrightnessManager {
         configuration = currentConfiguration
         createOverlays()
         guard !overlayWindows.isEmpty else { return }
+        beginConflictGrace()
         isBoosted = true
         startDisplayLink()
         maintainBoost()
@@ -126,6 +196,10 @@ final class DisplayBrightnessManager {
         removeOverlays()
         configuration = []
         gammaErrors.removeAll()
+        lastWrittenRamp.removeAll()
+        let hadConflict = hasGammaConflict
+        conflictTrackers.removeAll()
+        if hadConflict { onGammaConflictChange?() }
     }
 
     private func removeOverlays() {
@@ -148,6 +222,45 @@ final class DisplayBrightnessManager {
             NSLog("Brightness boost gamma write failed for display %u: %d; will retry", displayID, result.rawValue)
         }
         gammaErrors[displayID] = result
+        // A failed write leaves nothing to compare against on the next tick.
+        lastWrittenRamp[displayID] = result == .success ? ramp : nil
+    }
+
+    private func beginConflictGrace() {
+        conflictGraceUntil = ProcessInfo.processInfo.systemUptime + GammaConflictTracker.grace
+        lastWrittenRamp.removeAll()
+    }
+
+    /// Reads the live table before our next write and compares it with the last
+    /// ramp we wrote. Comparison only: nothing is rescaled from the live table.
+    private func checkForGammaConflict(on displayID: CGDirectDisplayID) {
+        let now = ProcessInfo.processInfo.systemUptime
+        guard now >= conflictGraceUntil,
+              let expected = lastWrittenRamp[displayID],
+              let live = Self.readGamma(displayID: displayID) else { return }
+        var tracker = conflictTrackers[displayID] ?? GammaConflictTracker()
+        let wasPersistent = tracker.isPersistent
+        tracker.record(mismatch: GammaConflictTracker.differs(expected: expected, live: live), now: now)
+        conflictTrackers[displayID] = tracker
+        if tracker.isPersistent != wasPersistent {
+            NSLog("Brightness boost gamma conflict on display %u: %@", displayID, tracker.isPersistent ? "detected" : "cleared")
+            onGammaConflictChange?()
+        }
+    }
+
+    /// Current transfer table (red, green, blue), sized from the display's own
+    /// capacity. Shared by conflict detection, diagnostics, and the harness.
+    static func readGamma(displayID: CGDirectDisplayID) -> [[CGGammaValue]]? {
+        let capacity = CGDisplayGammaTableCapacity(displayID)
+        guard capacity > 1 else { return nil }
+        var red = [CGGammaValue](repeating: 0, count: Int(capacity))
+        var green = red
+        var blue = red
+        var count: UInt32 = 0
+        guard CGGetDisplayTransferByTable(displayID, capacity, &red, &green, &blue, &count) == .success,
+              count > 1 else { return nil }
+        let n = Int(count)
+        return [Array(red.prefix(n)), Array(green.prefix(n)), Array(blue.prefix(n))]
     }
 
     /// Pure function, exposed for tests. Builds a linear ramp from 0 up to
@@ -171,6 +284,19 @@ final class DisplayBrightnessManager {
         return min(desired, headroomCeiling)
     }
 
+    static func clampedBoostLevel(_ level: Float) -> Float {
+        guard level.isFinite else { return 1.0 }
+        return min(1.0, max(0.1, level))
+    }
+
+    /// Scales the strength against the safe ceiling so the whole 0.1...1.0 range
+    /// stays usable: level 1.0 returns `safeCeiling` (3.0.4 behavior) and the
+    /// result never exceeds it or drops below 1.0.
+    static func strengthScale(level: Float, safeCeiling: Float) -> Float {
+        guard safeCeiling.isFinite, safeCeiling > 1.0 else { return 1.0 }
+        return 1.0 + clampedBoostLevel(level) * (safeCeiling - 1.0)
+    }
+
     /// Runs on the main run loop, independently of display-link delivery.
     /// Each display uses its own headroom so a dim external screen cannot lower
     /// the boost on another screen. Also recovers stopped/stalled renderers.
@@ -191,13 +317,23 @@ final class DisplayBrightnessManager {
     }
 
     private func refreshGamma() {
+        // Forget displays that were unplugged or are no longer EDR-capable so a
+        // stale persistent conflict cannot outlive its display.
+        let active = Set(NSScreen.screens.filter {
+            $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
+        }.map { $0.displayID })
+        let hadConflict = hasGammaConflict
+        conflictTrackers = conflictTrackers.filter { active.contains($0.key) }
+        lastWrittenRamp = lastWrittenRamp.filter { active.contains($0.key) }
+        if hadConflict, !hasGammaConflict { onGammaConflictChange?() }
         for screen in NSScreen.screens where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
-            let scale = Self.safeGammaScale(
+            let ceiling = Self.safeGammaScale(
                 desired: gammaScale,
                 liveHeadrooms: [Float(screen.maximumExtendedDynamicRangeColorComponentValue)],
                 safety: gammaHeadroomSafety
             )
-            applyGammaScale(scale, to: screen.displayID)
+            checkForGammaConflict(on: screen.displayID)
+            applyGammaScale(Self.strengthScale(level: boostLevel, safeCeiling: ceiling), to: screen.displayID)
         }
     }
 
@@ -328,6 +464,7 @@ final class DisplayBrightnessManager {
         defer { isChanging = false }
         stopDisplayLink()
         Self.resetGammaToProfile()
+        beginConflictGrace()
         removeOverlays()
         configuration = currentConfiguration
         createOverlays()

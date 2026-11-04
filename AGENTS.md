@@ -52,7 +52,7 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 - `StatusBarController` — Menu bar icon and dropdown menu.
 - `HotkeyManager` — Global keyboard shortcuts: Cmd+Shift+L toggles light, Cmd+Shift+Up/Down adjusts brightness, Cmd+Shift+B toggles XDR boost, and five rapid unmodified `Q` taps panic-quit.
 - `LoginItemManager` — Launch-at-login via `SMAppService`.
-- `DisplayBrightnessManager` — XDR brightness boost using an invisible Metal EDR overlay plus a synthetic linear gamma ramp.
+- `DisplayBrightnessManager` — XDR brightness boost using an invisible Metal EDR overlay plus a synthetic linear gamma ramp. User strength (`boostLevel`) scales against each display's safe ceiling; `GammaConflictTracker` flags repeated external gamma changes (read before write, never clears the preference).
 - `MagnifierWindow` — Floating magnifier loupe following cursor.
 - `EDRInfoWindow` — Debug-only panel shown when a debugger is attached; live headroom, gamma deviation, color-space diagnostics, and a copy button.
 

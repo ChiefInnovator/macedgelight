@@ -142,3 +142,96 @@ final class SafeGammaScaleTests: XCTestCase {
         )
     }
 }
+
+final class BoostStrengthTests: XCTestCase {
+    func testFullLevelMatchesSafeCeiling() {
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.55), 1.55, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.17), 1.17, accuracy: 1e-6)
+    }
+
+    func testRangeIsUsableOnLowHeadroom() {
+        let low = DisplayBrightnessManager.strengthScale(level: 0.1, safeCeiling: 1.17)
+        let mid = DisplayBrightnessManager.strengthScale(level: 0.5, safeCeiling: 1.17)
+        XCTAssertEqual(low, 1.017, accuracy: 1e-5)
+        XCTAssertGreaterThan(mid, low)
+        XCTAssertLessThan(mid, 1.17)
+    }
+
+    func testNeverBelowNeutralOrAboveCeiling() {
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.0), 1.0)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: .nan), 1.0)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 5.0, safeCeiling: 1.5), 1.5, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: -1, safeCeiling: 1.5), 1.05, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.clampedBoostLevel(.infinity), 1.0)
+    }
+}
+
+final class GammaConflictTests: XCTestCase {
+    func testPersistentAfterThreeMismatchesInWindowEvenIfInterleaved() {
+        var t = GammaConflictTracker()
+        t.record(mismatch: true, now: 0)
+        t.record(mismatch: false, now: 0.5)
+        t.record(mismatch: true, now: 1)
+        t.record(mismatch: false, now: 1.5)
+        XCTAssertFalse(t.isPersistent)
+        t.record(mismatch: true, now: 2)
+        XCTAssertTrue(t.isPersistent)
+    }
+
+    func testSpreadOutMismatchesNeverPersist() {
+        var t = GammaConflictTracker()
+        for i in 0..<5 { t.record(mismatch: true, now: Double(i) * 7) }
+        XCTAssertFalse(t.isPersistent)
+    }
+
+    func testClearsOnlyAfterTenQuietSeconds() {
+        var t = GammaConflictTracker()
+        for i in 0..<3 { t.record(mismatch: true, now: Double(i)) }
+        t.record(mismatch: false, now: 11.9)
+        XCTAssertTrue(t.isPersistent)
+        t.record(mismatch: false, now: 12.0)
+        XCTAssertFalse(t.isPersistent)
+    }
+
+    func testDiffersUsesToleranceAndInterpolatesCounts() {
+        let expected: [Float] = [0, 0.5, 1]
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [expected, expected, expected]))
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 0.501, 1], expected, expected]))
+        XCTAssertTrue(GammaConflictTracker.differs(expected: expected, live: [expected, expected, [0, 0.51, 1]]))
+        // Different live sample counts are compared by interpolation.
+        XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 1], [0, 1], [0, 1]]))
+        XCTAssertTrue(GammaConflictTracker.differs(expected: expected, live: [[0, 0.8], [0, 1], [0, 1]]))
+        let fine = (0..<1024).map { Float($0) / 1023 }
+        XCTAssertFalse(GammaConflictTracker.differs(expected: (0..<256).map { Float($0) / 255 }, live: [fine, fine, fine]))
+    }
+
+    func testStatusPrecedence() {
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: nil, conflict: false), .normal)
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: nil, conflict: true), .conflict)
+        XCTAssertEqual(BoostStatus.resolve(waitingMessage: "w", conflict: true), .waiting("w"))
+    }
+}
+
+final class BoostStrengthMenuTests: XCTestCase {
+    func testLevelsAndTitles() {
+        XCTAssertEqual(StatusBarController.boostLevels, [0.1, 0.25, 0.5, 0.75, 1.0])
+        XCTAssertEqual(StatusBarController.boostLevels.map(StatusBarController.boostLevelTitle),
+                       ["10%", "25%", "50%", "75%", "100%"])
+    }
+
+    func testSelectionFollowsCurrentLevel() {
+        let selected = StatusBarController.boostLevels.filter {
+            StatusBarController.isSelectedBoostLevel($0, current: 0.5)
+        }
+        XCTAssertEqual(selected, [0.5])
+        XCTAssertTrue(StatusBarController.boostLevels.allSatisfy {
+            !StatusBarController.isSelectedBoostLevel($0, current: 0.33)
+        })
+    }
+
+    func testEnablementMirrorsBoostToggle() {
+        XCTAssertTrue(StatusBarController.boostStrengthEnabled(supported: true, desired: false))
+        XCTAssertTrue(StatusBarController.boostStrengthEnabled(supported: false, desired: true))
+        XCTAssertFalse(StatusBarController.boostStrengthEnabled(supported: false, desired: false))
+    }
+}

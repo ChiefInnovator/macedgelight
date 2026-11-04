@@ -8,6 +8,7 @@ class StatusBarController: NSObject, NSMenuDelegate {
     private var launchAtLoginItem: NSMenuItem?
     private var menuBarModeItem: NSMenuItem?
     private var edrToggleItem: NSMenuItem?
+    private var boostStrengthItem: NSMenuItem?
     private var desktopIconsItem: NSMenuItem?
     private var settingsObservation: AnyCancellable?
     var menu: NSMenu? { statusItem.menu }
@@ -72,6 +73,18 @@ class StatusBarController: NSObject, NSMenuDelegate {
         edrItem.isEnabled = supported || AppSettings.shared.edrBoosted
         edrToggleItem = edrItem
         menu.addItem(edrItem)
+        let strengthItem = NSMenuItem(title: "Boost Strength", action: nil, keyEquivalent: "")
+        let strengthMenu = NSMenu()
+        for level in Self.boostLevels {
+            let item = NSMenuItem(title: Self.boostLevelTitle(level), action: #selector(selectBoostLevel(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = level
+            strengthMenu.addItem(item)
+        }
+        strengthItem.submenu = strengthMenu
+        strengthItem.isEnabled = Self.boostStrengthEnabled(supported: supported, desired: AppSettings.shared.edrBoosted)
+        boostStrengthItem = strengthItem
+        menu.addItem(strengthItem)
         menu.addItem(NSMenuItem.separator())
 
         let toggleControls = NSMenuItem(title: "Hide Controls", action: #selector(toggleControls), keyEquivalent: "")
@@ -239,6 +252,21 @@ class StatusBarController: NSObject, NSMenuDelegate {
         AppSettings.shared.desktopIconsHidden ? "Show Desktop Icons" : "Hide Desktop Icons"
     }
 
+    static let boostLevels: [Double] = [0.1, 0.25, 0.5, 0.75, 1.0]
+
+    static func boostLevelTitle(_ level: Double) -> String { "\(Int((level * 100).rounded()))%" }
+
+    static func isSelectedBoostLevel(_ level: Double, current: Double) -> Bool { abs(level - current) < 0.001 }
+
+    /// Mirrors the boost toggle: usable with a supported display or an enabled preference.
+    static func boostStrengthEnabled(supported: Bool, desired: Bool) -> Bool { supported || desired }
+
+    @objc private func selectBoostLevel(_ sender: NSMenuItem) {
+        guard let level = sender.representedObject as? Double else { return }
+        edgeLightManager?.setBoostLevel(level)
+        updateEDRMenuState()
+    }
+
     @objc private func toggleDisplayBrightness() {
         edgeLightManager?.toggleDisplayBrightness()
     }
@@ -250,9 +278,22 @@ class StatusBarController: NSObject, NSMenuDelegate {
         edrToggleItem?.isEnabled = supported || desired
         edrToggleItem?.title = supported || desired
             ? "Display Brightness Boost — \(desired ? "ON" : "OFF")" : "Display Brightness Boost — OFF (Not Supported)"
-        let recoveryMessage = edgeLightManager?.boostRecoveryMessage
-        if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost — WAITING" }
-        edrToggleItem?.toolTip = recoveryMessage
+        switch edgeLightManager?.boostStatus ?? .normal {
+        case .waiting(let message):
+            edrToggleItem?.title = "Display Brightness Boost — WAITING"
+            edrToggleItem?.toolTip = message
+        case .conflict:
+            edrToggleItem?.title = "Display Brightness Boost — CONFLICT"
+            edrToggleItem?.toolTip = BoostStatus.conflictMessage
+        case .normal:
+            edrToggleItem?.toolTip = nil
+        }
+        let current = AppSettings.shared.boostLevel
+        for item in boostStrengthItem?.submenu?.items ?? [] {
+            let level = item.representedObject as? Double ?? 0
+            item.state = Self.isSelectedBoostLevel(level, current: current) ? .on : .off
+        }
+        boostStrengthItem?.isEnabled = Self.boostStrengthEnabled(supported: supported, desired: desired)
     }
 
     func updateDesktopIconsMenuTitle() {

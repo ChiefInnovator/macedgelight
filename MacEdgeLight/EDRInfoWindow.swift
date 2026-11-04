@@ -142,14 +142,9 @@ class EDRInfoWindow: NSPanel {
     /// Measures how far the display gamma table deviates from identity (linear).
     /// Returns average absolute deviation per channel. Values near 0 = unmodified.
     private static func gammaDeviation(for displayID: CGDirectDisplayID) -> (r: Double, g: Double, b: Double)? {
-        let sampleCount: UInt32 = 256
-        var redTable = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-        var greenTable = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-        var blueTable = [CGGammaValue](repeating: 0, count: Int(sampleCount))
-        var actualCount: UInt32 = 0
-
-        let err = CGGetDisplayTransferByTable(displayID, sampleCount, &redTable, &greenTable, &blueTable, &actualCount)
-        guard err == .success, actualCount > 1 else { return nil }
+        guard let tables = DisplayBrightnessManager.readGamma(displayID: displayID) else { return nil }
+        let redTable = tables[0], greenTable = tables[1], blueTable = tables[2]
+        let actualCount = UInt32(redTable.count)
 
         var rDev = 0.0, gDev = 0.0, bDev = 0.0
         for i in 0..<Int(actualCount) {
