@@ -8,6 +8,7 @@ class StatusBarController: NSObject, NSMenuDelegate {
     private var launchAtLoginItem: NSMenuItem?
     private var menuBarModeItem: NSMenuItem?
     private var edrToggleItem: NSMenuItem?
+    private var boostStrengthItem: NSMenuItem?
     private var desktopIconsItem: NSMenuItem?
     private var settingsObservation: AnyCancellable?
     var menu: NSMenu? { statusItem.menu }
@@ -72,6 +73,17 @@ class StatusBarController: NSObject, NSMenuDelegate {
         edrItem.isEnabled = supported || AppSettings.shared.edrBoosted
         edrToggleItem = edrItem
         menu.addItem(edrItem)
+        let strengthItem = NSMenuItem(title: "Boost Strength", action: nil, keyEquivalent: "")
+        let strengthMenu = NSMenu()
+        for level in Self.boostLevels {
+            let item = NSMenuItem(title: "\(Int(level * 100))%", action: #selector(selectBoostLevel(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = level
+            strengthMenu.addItem(item)
+        }
+        strengthItem.submenu = strengthMenu
+        boostStrengthItem = strengthItem
+        menu.addItem(strengthItem)
         menu.addItem(NSMenuItem.separator())
 
         let toggleControls = NSMenuItem(title: "Hide Controls", action: #selector(toggleControls), keyEquivalent: "")
@@ -239,6 +251,14 @@ class StatusBarController: NSObject, NSMenuDelegate {
         AppSettings.shared.desktopIconsHidden ? "Show Desktop Icons" : "Hide Desktop Icons"
     }
 
+    static let boostLevels: [Double] = [0.1, 0.25, 0.5, 0.75, 1.0]
+
+    @objc private func selectBoostLevel(_ sender: NSMenuItem) {
+        guard let level = sender.representedObject as? Double else { return }
+        edgeLightManager?.setBoostLevel(level)
+        updateEDRMenuState()
+    }
+
     @objc private func toggleDisplayBrightness() {
         edgeLightManager?.toggleDisplayBrightness()
     }
@@ -253,6 +273,11 @@ class StatusBarController: NSObject, NSMenuDelegate {
         let recoveryMessage = edgeLightManager?.boostRecoveryMessage
         if recoveryMessage != nil { edrToggleItem?.title = "Display Brightness Boost — WAITING" }
         edrToggleItem?.toolTip = recoveryMessage
+        let current = AppSettings.shared.boostLevel
+        for item in boostStrengthItem?.submenu?.items ?? [] {
+            let level = item.representedObject as? Double ?? 0
+            item.state = abs(level - current) < 0.001 ? .on : .off
+        }
     }
 
     func updateDesktopIconsMenuTitle() {

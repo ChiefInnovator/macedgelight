@@ -62,6 +62,7 @@ User input (button / hotkey / menu)
 | borderWidth | Double | 60.0 | 10 – 150 | Yes |
 | magnifierEnabled | Bool | false | — | Yes |
 | edrBoosted | Bool | false | — | Yes |
+| boostLevel | Double | 1.0 | 0.1–1.0 | Yes (invalid or missing values load as 1.0; full reset restores 1.0) |
 
 ### Menu Bar Modes
 
@@ -193,7 +194,7 @@ boosted[i] = Float(i) / Float(count - 1) * safeGammaScale
 
 This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. The ramp is generated from scratch on every apply rather than reading the live LUT, so a crashed run, dirty sleep cycle, or re-entrant activation cannot double-scale an already boosted table.
 
-Each EDR display has its own scale, clamped to 90% of its current headroom (minimum 1.0, maximum 1.55). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
+The user-selected strength (`boostLevel`, menu: 10/25/50/75/100%) is applied against each display's safe ceiling: `applied = 1.0 + level × (safeCeiling − 1.0)`. Level 1.0 equals the ceiling (3.0.4 behavior) and the range never dips below the neutral 1.0 or above the ceiling. Changing the level rewrites the ramp immediately without touching overlays, recovery state, or `edrBoosted`; `DisplayBrightnessManager` receives it by assignment and does not import `AppSettings`. Each EDR display has its own safe ceiling, clamped to 90% of its current headroom (minimum 1.0, maximum 1.55). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
 
 ### Hardware Brightness
 

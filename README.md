@@ -1,10 +1,10 @@
-# MacEdgeLight 3.0.4
+# MacEdgeLight 3.1.0
 
 **Light for your calls. Brightness for your screen.**
 
 MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-[Download version 3.0.4](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.4) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.0.4)
+[Download version 3.1.0](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.0) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.0)
 
 ![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
 
@@ -30,9 +30,9 @@ For people who benefit from additional brightness, seeing text and everyday scre
 
 Extra brightness helps some people with low vision. Results depend on your vision, display, settings, and available headroom. MacEdgeLight also includes a separate magnifier loupe for inspecting details under the cursor.
 
-## Included in Version 3.0.4
+## Included in Version 3.1.0
 
-New in this patch: restored hold-to-repeat fine adjustments, reliable cancellation, clearer accessible control help, and a fix for Auto menu-bar reveal on vertically stacked displays. Display brightness boost tuning is unchanged. [Full release notes](docs/RELEASE_NOTES_3.0.4.md).
+New in this release: a saved **Boost Strength** menu (10–100%) for display brightness boost. 100% matches earlier releases and all safety clamps are unchanged. [Full release notes](docs/RELEASE_NOTES_3.1.0.md).
 
 - **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
 - **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
@@ -54,6 +54,8 @@ New in this patch: restored hold-to-repeat fine adjustments, reliable cancellati
 - Menu bar modes: **Below**, **Extend**, or **Auto** to reveal the menu bar as the cursor approaches.
 
 ### Display Brightness Boost
+
+Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier releases; lower levels scale the gamma ramp within the same safety clamp.
 
 - Separate menu-bar, toolbar, and keyboard controls.
 - Persistent enabled preference and automatic recovery after sleep, unlock, session switching, and reconnection.
@@ -78,7 +80,7 @@ New in this patch: restored hold-to-repeat fine adjustments, reliable cancellati
 
 **Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-1. Download the [3.0.4 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.4/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.0.4/MacEdgeLight.zip).
+1. Download the [3.1.0 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.0/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.0/MacEdgeLight.zip).
 2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
 3. Open MacEdgeLight and use its menu-bar icon or floating controls.
 4. Enable **Launch at Login** if you want it to return automatically after signing in.

@@ -46,6 +46,8 @@ class EdgeLightManager {
         // cycle before anything else touches display transfer tables.
         DisplayBrightnessManager.resetGammaToProfile()
 
+        DisplayBrightnessManager.shared.setBoostLevel(Float(settings.boostLevel))
+
         // The persisted preference survives temporary system suspension.
         reconcileBoost()
 
@@ -277,6 +279,7 @@ class EdgeLightManager {
     func resetToDefaults() {
         let wasDesktopHidden = settings.desktopIconsHidden
         settings.resetToDefaults()
+        DisplayBrightnessManager.shared.setBoostLevel(Float(settings.boostLevel))
         hideMagnifier()
         DisplayBrightnessManager.shared.setEnabled(false)
         // Restore desktop icons if they were hidden
@@ -343,6 +346,11 @@ class EdgeLightManager {
         }
         settings.edrBoosted.toggle()
         reconcileBoost()
+    }
+
+    func setBoostLevel(_ level: Double) {
+        settings.boostLevel = AppSettings.validatedBoostLevel(level)
+        DisplayBrightnessManager.shared.setBoostLevel(Float(settings.boostLevel))
     }
 
     var boostRecoveryMessage: String? {

@@ -20,6 +20,7 @@ class AppSettings: ObservableObject {
         static let borderWidth = "borderWidth"
         static let magnifierEnabled = "magnifierEnabled"
         static let edrBoosted = "edrBoosted"
+        static let boostLevel = "boostLevel"
     }
 
     @Published var brightness: Double {
@@ -79,6 +80,20 @@ class AppSettings: ObservableObject {
         didSet { defaults.set(edrBoosted, forKey: Keys.edrBoosted) }
     }
 
+    /// Boost strength, 0.1...1.0 (1.0 = full strength, identical to 3.0.4).
+    @Published var boostLevel: Double {
+        didSet { defaults.set(boostLevel, forKey: Keys.boostLevel) }
+    }
+
+    static let minBoostLevel = 0.1
+
+    /// Missing, non-finite, or out-of-range stored values fall back to full strength.
+    static func validatedBoostLevel(_ value: Double?) -> Double {
+        guard let value, value.isFinite,
+              value >= minBoostLevel, value <= 1.0 else { return 1.0 }
+        return value
+    }
+
     func resetToDefaults() {
         brightness = 1.0
         colorTemperature = 0.5
@@ -90,6 +105,7 @@ class AppSettings: ObservableObject {
         borderWidth = 60.0
         magnifierEnabled = false
         edrBoosted = false
+        boostLevel = 1.0
     }
 
     private init() {
@@ -133,5 +149,6 @@ class AppSettings: ObservableObject {
         self.borderWidth = defaults.double(forKey: Keys.borderWidth)
         self.magnifierEnabled = defaults.bool(forKey: Keys.magnifierEnabled)
         self.edrBoosted = defaults.bool(forKey: Keys.edrBoosted)
+        self.boostLevel = Self.validatedBoostLevel(defaults.object(forKey: Keys.boostLevel) as? Double)
     }
 }

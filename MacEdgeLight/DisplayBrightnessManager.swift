@@ -61,6 +61,19 @@ final class DisplayBrightnessManager {
     /// auto-brightness) so content doesn't clip to white.
     private let gammaHeadroomSafety: Float = 0.90
 
+    /// User-selected strength, 0.1...1.0. Set by `EdgeLightManager`; the manager
+    /// does not import `AppSettings` so the hardware harness compiles it alone.
+    private(set) var boostLevel: Float = 1.0
+
+    /// Applies a new strength immediately by rewriting the ramp. Does not touch
+    /// overlays, recovery state, or the persisted boost preference.
+    func setBoostLevel(_ level: Float) {
+        precondition(Thread.isMainThread)
+        boostLevel = Self.clampedBoostLevel(level)
+        guard isBoosted, !isChanging else { return }
+        refreshGamma()
+    }
+
     var isAvailable: Bool {
         guard metalDevice != nil, commandQueue != nil else { return false }
         return NSScreen.screens.contains {
@@ -171,6 +184,19 @@ final class DisplayBrightnessManager {
         return min(desired, headroomCeiling)
     }
 
+    static func clampedBoostLevel(_ level: Float) -> Float {
+        guard level.isFinite else { return 1.0 }
+        return min(1.0, max(0.1, level))
+    }
+
+    /// Scales the strength against the safe ceiling so the whole 0.1...1.0 range
+    /// stays usable: level 1.0 returns `safeCeiling` (3.0.4 behavior) and the
+    /// result never exceeds it or drops below 1.0.
+    static func strengthScale(level: Float, safeCeiling: Float) -> Float {
+        guard safeCeiling.isFinite, safeCeiling > 1.0 else { return 1.0 }
+        return 1.0 + clampedBoostLevel(level) * (safeCeiling - 1.0)
+    }
+
     /// Runs on the main run loop, independently of display-link delivery.
     /// Each display uses its own headroom so a dim external screen cannot lower
     /// the boost on another screen. Also recovers stopped/stalled renderers.
@@ -192,12 +218,12 @@ final class DisplayBrightnessManager {
 
     private func refreshGamma() {
         for screen in NSScreen.screens where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
-            let scale = Self.safeGammaScale(
+            let ceiling = Self.safeGammaScale(
                 desired: gammaScale,
                 liveHeadrooms: [Float(screen.maximumExtendedDynamicRangeColorComponentValue)],
                 safety: gammaHeadroomSafety
             )
-            applyGammaScale(scale, to: screen.displayID)
+            applyGammaScale(Self.strengthScale(level: boostLevel, safeCeiling: ceiling), to: screen.displayID)
         }
     }
 

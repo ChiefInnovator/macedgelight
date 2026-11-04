@@ -142,3 +142,26 @@ final class SafeGammaScaleTests: XCTestCase {
         )
     }
 }
+
+final class BoostStrengthTests: XCTestCase {
+    func testFullLevelMatchesSafeCeiling() {
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.55), 1.55, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.17), 1.17, accuracy: 1e-6)
+    }
+
+    func testRangeIsUsableOnLowHeadroom() {
+        let low = DisplayBrightnessManager.strengthScale(level: 0.1, safeCeiling: 1.17)
+        let mid = DisplayBrightnessManager.strengthScale(level: 0.5, safeCeiling: 1.17)
+        XCTAssertEqual(low, 1.017, accuracy: 1e-5)
+        XCTAssertGreaterThan(mid, low)
+        XCTAssertLessThan(mid, 1.17)
+    }
+
+    func testNeverBelowNeutralOrAboveCeiling() {
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: 1.0), 1.0)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: .nan), 1.0)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 5.0, safeCeiling: 1.5), 1.5, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: -1, safeCeiling: 1.5), 1.05, accuracy: 1e-6)
+        XCTAssertEqual(DisplayBrightnessManager.clampedBoostLevel(.infinity), 1.0)
+    }
+}
