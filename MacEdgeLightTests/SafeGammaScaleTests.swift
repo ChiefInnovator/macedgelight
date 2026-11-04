@@ -211,3 +211,27 @@ final class GammaConflictTests: XCTestCase {
         XCTAssertEqual(BoostStatus.resolve(waitingMessage: "w", conflict: true), .waiting("w"))
     }
 }
+
+final class BoostStrengthMenuTests: XCTestCase {
+    func testLevelsAndTitles() {
+        XCTAssertEqual(StatusBarController.boostLevels, [0.1, 0.25, 0.5, 0.75, 1.0])
+        XCTAssertEqual(StatusBarController.boostLevels.map(StatusBarController.boostLevelTitle),
+                       ["10%", "25%", "50%", "75%", "100%"])
+    }
+
+    func testSelectionFollowsCurrentLevel() {
+        let selected = StatusBarController.boostLevels.filter {
+            StatusBarController.isSelectedBoostLevel($0, current: 0.5)
+        }
+        XCTAssertEqual(selected, [0.5])
+        XCTAssertTrue(StatusBarController.boostLevels.allSatisfy {
+            !StatusBarController.isSelectedBoostLevel($0, current: 0.33)
+        })
+    }
+
+    func testEnablementMirrorsBoostToggle() {
+        XCTAssertTrue(StatusBarController.boostStrengthEnabled(supported: true, desired: false))
+        XCTAssertTrue(StatusBarController.boostStrengthEnabled(supported: false, desired: true))
+        XCTAssertFalse(StatusBarController.boostStrengthEnabled(supported: false, desired: false))
+    }
+}

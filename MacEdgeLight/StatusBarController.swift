@@ -76,12 +76,13 @@ class StatusBarController: NSObject, NSMenuDelegate {
         let strengthItem = NSMenuItem(title: "Boost Strength", action: nil, keyEquivalent: "")
         let strengthMenu = NSMenu()
         for level in Self.boostLevels {
-            let item = NSMenuItem(title: "\(Int(level * 100))%", action: #selector(selectBoostLevel(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: Self.boostLevelTitle(level), action: #selector(selectBoostLevel(_:)), keyEquivalent: "")
             item.target = self
             item.representedObject = level
             strengthMenu.addItem(item)
         }
         strengthItem.submenu = strengthMenu
+        strengthItem.isEnabled = Self.boostStrengthEnabled(supported: supported, desired: AppSettings.shared.edrBoosted)
         boostStrengthItem = strengthItem
         menu.addItem(strengthItem)
         menu.addItem(NSMenuItem.separator())
@@ -253,6 +254,13 @@ class StatusBarController: NSObject, NSMenuDelegate {
 
     static let boostLevels: [Double] = [0.1, 0.25, 0.5, 0.75, 1.0]
 
+    static func boostLevelTitle(_ level: Double) -> String { "\(Int((level * 100).rounded()))%" }
+
+    static func isSelectedBoostLevel(_ level: Double, current: Double) -> Bool { abs(level - current) < 0.001 }
+
+    /// Mirrors the boost toggle: usable with a supported display or an enabled preference.
+    static func boostStrengthEnabled(supported: Bool, desired: Bool) -> Bool { supported || desired }
+
     @objc private func selectBoostLevel(_ sender: NSMenuItem) {
         guard let level = sender.representedObject as? Double else { return }
         edgeLightManager?.setBoostLevel(level)
@@ -283,8 +291,9 @@ class StatusBarController: NSObject, NSMenuDelegate {
         let current = AppSettings.shared.boostLevel
         for item in boostStrengthItem?.submenu?.items ?? [] {
             let level = item.representedObject as? Double ?? 0
-            item.state = abs(level - current) < 0.001 ? .on : .off
+            item.state = Self.isSelectedBoostLevel(level, current: current) ? .on : .off
         }
+        boostStrengthItem?.isEnabled = Self.boostStrengthEnabled(supported: supported, desired: desired)
     }
 
     func updateDesktopIconsMenuTitle() {

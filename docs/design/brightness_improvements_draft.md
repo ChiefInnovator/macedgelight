@@ -1,7 +1,7 @@
 # Display brightness boost: improvements for MacEdgeLight 4.0.0
 
 - **Author:** Richard Crane / project engineering
-- **Status:** Revision 3. Applies the Goldfish review's recommendation to narrow scope. **Shipped in 3.1.0:** Phase 1 (strength, D1 = menu-only stepped submenu) and Phase 2 (conflict detection, D2 = every tick, D4 = A, keep writing and show the conflict; tracker, status resolver and harness checks are in existing files rather than new ones). **Removed from this design:** thermal/Low Power status (D3), the event log, the diagnostics report, and the known-app list; each needs its own design if wanted. Phase 2's go/no-go hardware run (`scripts/test-boost-hardware.sh`, MacEdgeLight quit) has not been executed yet. The target release and the file table below predate this narrowing.
+- **Status:** Revision 3. Applies the Goldfish review's recommendation to narrow scope. **Shipped in 3.1.0:** Phase 1 (strength, D1 = menu-only stepped submenu) and Phase 2 (conflict detection, D2 = every tick, D4 = A, keep writing and show the conflict; tracker, status resolver and harness checks are in existing files rather than new ones). **Removed from this design:** thermal/Low Power status (D3), the event log, the diagnostics report, and the known-app list; each needs its own design if wanted. Phase 2's go/no-go hardware run passed on the development Mac (no false conflicts in 30 s; separate-process writer detected within 10 s and cleared after it stopped); the external-EDR-display and thread-sanitizer runs were not done. The target release and the file table below predate this narrowing.
 - **Date:** 2026-11-04
 - **Target release:** 4.0.0 (next major version). Baseline: 3.0.4 source.
 - **Context:** BrightIntosh (GPL-3.0) was read as a source review only (commit `f6806b8`, 2026-10-08; findings come from one reader and were not independently re-checked). No BrightIntosh code or constants are used; every threshold below was derived here from MacEdgeLight's own timings and harness.
@@ -74,7 +74,7 @@ A persisted `boostLevel` from 0.1 to 1.0 (default 1.0). Level is applied against
 - `boostLevel` does not change `edrBoosted`, recovery state, or the EDR overlay.
 - Ring-light reset leaves `boostLevel` unchanged (it already preserves boost state). The full reset to defaults restores 1.0 along with `edrBoosted = false`.
 
-Control form: Open Decision D1.
+Control form: resolved as D1-C, a menu-only stepped submenu (10/25/50/75/100%), shipped in 3.1.0.
 
 ### 2. Conflict detection (Phase 2, gated)
 
@@ -165,7 +165,7 @@ Contents: app version, macOS version, hardware model; per display (ID, built-in 
 
 ## Open Decisions (owner chooses; not ranked)
 
-**D1. Strength control form**
+**D1. Strength control form** (resolved: C, shipped in 3.1.0)
 - **A. Slider** in the HUD and menu. Fails when the HUD becomes crowded or the slider is hard to use with VoiceOver.
 - **B. Stepped control** (for example 25%, 50%, 75%, 100%) with two new hotkeys. Fails when users want in-between values, or the chosen hotkeys collide (currently only Q and Cmd+Shift+L/Up/Down/B are used).
 - **C. Menu-only submenu.** Fails when HUD users never find it.
@@ -190,15 +190,15 @@ Contents: app version, macOS version, hardware model; per display (ID, built-in 
 
 ## Detailed Implementation
 
-Phase column: P1 strength, P2 conflict and event log, P3 thermal, status, diagnostics, P0 release. Rows marked "blocked" cannot be built until that decision is recorded. All paths are relative to the repository root.
+Phase column: P1 strength, P2 conflict and event log, P3 thermal, status, diagnostics, P0 release. All paths are relative to the repository root.
 
 | Phase | Action | File | What changes and why |
 |---|---|---|---|
 | P1 | Modify | `MacEdgeLight/AppSettings.swift` | Add `boostLevel` (key string `boostLevel`), registered default 1.0, validated on load (missing, non-finite, outside 0.1–1.0 → 1.0), clamped on set. `resetToDefaults()` sets it to 1.0. |
 | P1 | Modify | `MacEdgeLight/DisplayBrightnessManager.swift` | Add settable `boostLevel` (default 1.0); pure static function turning level and safe ceiling into the applied scale; `refreshGamma` uses it; public method to apply a level change now on the main thread. |
 | P1 | Modify | `MacEdgeLight/EdgeLightManager.swift` | Observe `AppSettings.boostLevel` via the existing settings change path, assign it to the manager, call the apply method. `resetToDefaults()` resets it. `resetRingLight()` leaves it alone. |
-| P1 | Modify | `MacEdgeLight/StatusBarController.swift`, `MacEdgeLight/ControlPanelWindow.swift` | Strength control per D1 (blocked on D1). Label "Boost strength". Disabled with the boost button when no EDR display and boost off. |
-| P1 | Modify | `MacEdgeLight/HotkeyManager.swift` | Only if D1 = B: two new actions added to the register signature and call site (blocked on D1). |
+| P1 | Modify | `MacEdgeLight/StatusBarController.swift`, `MacEdgeLight/ControlPanelWindow.swift` | Strength control: menu-only stepped submenu (D1-C, shipped). Label "Boost strength". Disabled with the boost button when no EDR display and boost off. |
+| P1 | Modify | `MacEdgeLight/HotkeyManager.swift` | Not needed: D1 resolved as menu-only, so no new hotkeys. |
 | P1 | Modify | `MacEdgeLightTests/SafeGammaScaleTests.swift` | Add: level 1.0 equals today's safe scale; level 0.1 at ceiling 1.55 gives 1.055; at ceiling 1.17 the range is 1.017–1.17; ceiling 1.0 gives 1.0 at any level; monotonic in level; NaN level or ceiling gives 1.0. |
 | P1 | Modify | `MacEdgeLightTests/AppSettingsTests.swift` | Add `boostLevel` to `SettingsSnapshot` capture/restore (otherwise tests leak into `UserDefaults`); test default, missing key → 1.0, out-of-range and NaN → 1.0, persistence round trip, full reset → 1.0, ring-light reset leaves it. |
 | P2 | Create | `MacEdgeLight/BoostConflictTracker.swift` | Pure value type, injected monotonic time. Input: per-display comparison result (match, mismatch, skipped) and timestamp. Output: clear or persistent. 6-second window, 3 mismatches, 10-second clear, 3-second grace restarted by events from the manager. No AppKit. |

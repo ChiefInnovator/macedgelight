@@ -317,6 +317,15 @@ final class DisplayBrightnessManager {
     }
 
     private func refreshGamma() {
+        // Forget displays that were unplugged or are no longer EDR-capable so a
+        // stale persistent conflict cannot outlive its display.
+        let active = Set(NSScreen.screens.filter {
+            $0.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0
+        }.map { $0.displayID })
+        let hadConflict = hasGammaConflict
+        conflictTrackers = conflictTrackers.filter { active.contains($0.key) }
+        lastWrittenRamp = lastWrittenRamp.filter { active.contains($0.key) }
+        if hadConflict, !hasGammaConflict { onGammaConflictChange?() }
         for screen in NSScreen.screens where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
             let ceiling = Self.safeGammaScale(
                 desired: gammaScale,
