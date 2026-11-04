@@ -186,15 +186,15 @@ On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/M
 
 ### Linear Gamma Scaling
 
-The display's gamma transfer table is replaced with a freshly generated linear ramp scaled by up to `gammaScale` (1.55x):
+The display's gamma transfer table is replaced with a freshly generated linear ramp scaled by up to `gammaScale` (2.4x):
 
 ```swift
-boosted[i] = Float(i) / Float(count - 1) * safeGammaScale
+boosted[i] = Float(i) / Float(count - 1) * gammaScale
 ```
 
 This pushes pixel values proportionally into the EDR range. Unlike power-curve gamma (which compresses midtones and causes washout), linear scaling preserves relative contrast — blacks stay black, everything else gets proportionally brighter. The ramp is generated from scratch on every apply rather than reading the live LUT, so a crashed run, dirty sleep cycle, or re-entrant activation cannot double-scale an already boosted table.
 
-The user-selected strength (`boostLevel`, menu: 10/25/50/75/100%) is applied against each display's safe ceiling: `applied = 1.0 + level × (safeCeiling − 1.0)`. Level 1.0 equals the ceiling (3.0.4 behavior) and the range never dips below the neutral 1.0 or above the ceiling. Changing the level rewrites the ramp immediately without touching overlays, recovery state, or `edrBoosted`; `DisplayBrightnessManager` receives it by assignment and does not import `AppSettings`. Conflict detection: at the start of each maintenance tick, before writing, the live table is read and compared with the last ramp this process wrote to that display (all samples, all channels, tolerance 0.002; the written ramp is linearly interpolated when the display reports a different sample count). Comparison is skipped for 3 seconds after activation, overlay rebuild, or deactivation, and after a failed write. A display is in conflict after 3 mismatches within 6 seconds (not necessarily consecutive) and clears after 10 seconds without one. A conflict never clears `edrBoosted` or stops writes; the menu and HUD show CONFLICT (WAITING takes precedence) and the user can turn boost off. This is a heuristic, not proof of another writer. Each EDR display has its own safe ceiling, clamped to 90% of its current headroom (minimum 1.0, maximum 1.55). A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. The clamp reduces clipping risk when available headroom drops; it cannot prevent every transient or force macOS to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
+The user-selected strength (`boostLevel`, menu: 10/25/50/75/100%) is applied against `gammaScale` (the ceiling): `applied = 1.0 + level × (safeCeiling − 1.0)`. Level 1.0 equals the ceiling (3.0.4 behavior) and the range never dips below the neutral 1.0 or above the ceiling. Changing the level rewrites the ramp immediately without touching overlays, recovery state, or `edrBoosted`; `DisplayBrightnessManager` receives it by assignment and does not import `AppSettings`. Conflict detection: at the start of each maintenance tick, before writing, the live table is read and compared with the last ramp this process wrote to that display (all samples, all channels, tolerance 0.002; the written ramp is linearly interpolated when the display reports a different sample count). Comparison is skipped for 3 seconds after activation, overlay rebuild, or deactivation, and after a failed write. A display is in conflict after 3 mismatches within 6 seconds (not necessarily consecutive) and clears after 10 seconds without one. A conflict never clears `edrBoosted` or stops writes; the menu and HUD show CONFLICT (WAITING takes precedence) and the user can turn boost off. This is a heuristic, not proof of another writer. The ramp is not clamped to live headroom: if macOS grants less than 2.4x, content above the granted headroom clips. The neutral floor is 1.0. A main-run-loop timer in `.common` mode reasserts a fresh ramp every 0.5 seconds, even when headroom has not changed, repairing LUT resets by macOS. Failed writes are logged and retried on subsequent ticks. Invalid headroom falls back to a neutral scale. There is no headroom margin; macOS cannot be forced to sustain a fixed luminance. Night Shift, True Tone, and hardware calibration are bypassed by the synthetic ramp while boost is active and restored via ColorSync on deactivation.
 
 ### Hardware Brightness
 
@@ -205,8 +205,7 @@ Hardware backlight is intentionally left unchanged. The boost uses only the synt
 | Constant | Value | Purpose |
 |---|---|---|
 | `maxHeadroomCap` | 16.0 | Maximum EDR headroom requested from macOS |
-| `gammaScale` | 1.55 | Linear gamma table multiplier (~0.275 deviation) |
-| `gammaHeadroomSafety` | 0.90 | Fraction of current headroom allowed for gamma scaling |
+| `gammaScale` | 2.4 | Linear gamma table multiplier |
 
 ### Lifecycle
 
