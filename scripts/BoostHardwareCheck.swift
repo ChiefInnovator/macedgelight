@@ -12,17 +12,10 @@ enum BoostHardwareCheck {
     }
 
     static func gamma(for screen: NSScreen) throws -> [[Float]] {
-        let capacity = CGDisplayGammaTableCapacity(screen.displayID)
-        guard capacity > 1 else { throw Failure.message("Gamma readback unavailable") }
-        var red = [Float](repeating: 0, count: Int(capacity))
-        var green = red
-        var blue = red
-        var count: UInt32 = 0
-        let result = CGGetDisplayTransferByTable(screen.displayID, capacity, &red, &green, &blue, &count)
-        guard result == .success, count > 1 else {
-            throw Failure.message("Gamma readback failed: \(result.rawValue)")
+        guard let tables = DisplayBrightnessManager.readGamma(displayID: screen.displayID) else {
+            throw Failure.message("Gamma readback unavailable")
         }
-        return [Array(red.prefix(Int(count))), Array(green.prefix(Int(count))), Array(blue.prefix(Int(count)))]
+        return tables
     }
 
     static func checkRamp(on screen: NSScreen) throws {
@@ -53,7 +46,36 @@ enum BoostHardwareCheck {
         }
     }
 
+    /// Child mode: rewrite the gamma table once a second from a separate process.
+    static func runExternalWriter(seconds: Int) -> Never {
+        // Behave like a competing tool: set an explicit neutral table on every display.
+        let identity = DisplayBrightnessManager.buildBoostedRamp(scale: 1.0, count: 256)
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        CGGetActiveDisplayList(16, &ids, &count)
+        for _ in 0..<seconds {
+            for id in ids.prefix(Int(count)) {
+                CGSetDisplayTransferByTable(id, 256, identity, identity, identity)
+            }
+            Thread.sleep(forTimeInterval: 1)
+        }
+        exit(0)
+    }
+
+    static func waitFor(_ timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            pump(for: 0.25)
+        }
+        return condition()
+    }
+
     static func main() {
+        if let index = CommandLine.arguments.firstIndex(of: "--external-writer"),
+           let seconds = CommandLine.arguments.dropFirst(index + 1).first.flatMap({ Int($0) }) {
+            runExternalWriter(seconds: seconds)
+        }
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
         let manager = DisplayBrightnessManager.shared
@@ -109,10 +131,18 @@ enum BoostHardwareCheck {
             for screen in screens { try checkRamp(on: screen) }
             print("PASS: gamma maintenance during event tracking")
 
+            // The in-process resets above register as external writes; wait for
+            // the conflict state to clear, which also verifies recovery.
+            guard waitFor(15, { !manager.hasGammaConflict }) else {
+                throw Failure.message("Conflict state did not clear after in-process resets")
+            }
+            print("PASS: conflict state clears within 15 seconds of the last external reset")
+
             var minimumHeadroom = Double.infinity
             var maximumHeadroom = 1.0
             for _ in 0..<30 {
                 pump(for: 1)
+                guard !manager.hasGammaConflict else { throw Failure.message("False conflict during normal boost") }
                 for screen in screens {
                     try checkRamp(on: screen)
                     let headroom = screen.maximumExtendedDynamicRangeColorComponentValue
@@ -121,6 +151,23 @@ enum BoostHardwareCheck {
                 }
             }
             print("PASS: 30-second sustained gamma check; headroom range \(minimumHeadroom)...\(maximumHeadroom)")
+
+            // A separate process rewrites the table every second.
+            let writer = Process()
+            writer.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
+            writer.arguments = ["--external-writer", "12"]
+            try writer.run()
+            defer { if writer.isRunning { writer.terminate() } }
+            guard waitFor(10, { manager.hasGammaConflict }) else {
+                throw Failure.message("External writer not detected within 10 seconds")
+            }
+            print("PASS: separate-process writer reported as conflict within 10 seconds")
+            writer.waitUntilExit()
+            guard waitFor(12, { !manager.hasGammaConflict }) else {
+                throw Failure.message("Conflict did not clear within 12 seconds of the writer stopping")
+            }
+            for screen in screens { try checkRamp(on: screen) }
+            print("PASS: conflict clears after the external writer stops")
 
             manager.setEnabled(false)
             let restored = try screens.map { try gamma(for: $0) }

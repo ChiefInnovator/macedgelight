@@ -50,6 +50,7 @@ final class AppSettingsTests: XCTestCase {
         s.borderWidth = 125.0
         s.magnifierEnabled = true
         s.edrBoosted = true
+        s.boostLevel = 0.4
 
         s.resetToDefaults()
 
@@ -63,6 +64,19 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(s.borderWidth, 60.0)
         XCTAssertFalse(s.magnifierEnabled)
         XCTAssertFalse(s.edrBoosted)
+        XCTAssertEqual(s.boostLevel, 1.0)
+    }
+
+    func testBoostLevelValidationAndPersistence() {
+        XCTAssertEqual(AppSettings.validatedBoostLevel(nil), 1.0)
+        XCTAssertEqual(AppSettings.validatedBoostLevel(.nan), 1.0)
+        XCTAssertEqual(AppSettings.validatedBoostLevel(0.05), 1.0)
+        XCTAssertEqual(AppSettings.validatedBoostLevel(1.5), 1.0)
+        XCTAssertEqual(AppSettings.validatedBoostLevel(0.1), 0.1)
+        XCTAssertEqual(AppSettings.validatedBoostLevel(0.5), 0.5)
+        let s = AppSettings.shared
+        s.boostLevel = 0.25
+        XCTAssertEqual(UserDefaults.standard.double(forKey: "boostLevel"), 0.25)
     }
 
     func testBrightnessPersistsToUserDefaults() {
@@ -320,6 +334,7 @@ private struct SettingsSnapshot {
     let borderWidth: Double
     let magnifierEnabled: Bool
     let edrBoosted: Bool
+    let boostLevel: Double
     let launchAtLogin: Bool
     let domainName: String
     let persistentDomain: [String: Any]?
@@ -342,6 +357,7 @@ private struct SettingsSnapshot {
             borderWidth: s.borderWidth,
             magnifierEnabled: s.magnifierEnabled,
             edrBoosted: s.edrBoosted,
+            boostLevel: s.boostLevel,
             launchAtLogin: s.launchAtLogin,
             domainName: domainName,
             persistentDomain: persistentDomain
@@ -363,6 +379,7 @@ private struct SettingsSnapshot {
         s.borderWidth = borderWidth
         s.magnifierEnabled = magnifierEnabled
         s.edrBoosted = edrBoosted
+        s.boostLevel = boostLevel
         s.launchAtLogin = launchAtLogin
         // Setters restore the singleton; restore exact disk state last, including missing keys.
         if let persistentDomain {

@@ -466,11 +466,16 @@ class ControlPanelWindow: NSPanel {
             let supported = DisplayBrightnessManager.shared.isAvailable
             edrButton.isEnabled = supported || settings.edrBoosted
             edrButton.contentTintColor = supported ? activeColor : NSColor(white: 1.0, alpha: 0.4)
-            if let message = edgeLightManager?.boostRecoveryMessage {
+            switch edgeLightManager?.boostStatus ?? .normal {
+            case .waiting(let message):
                 edrButton.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: message)
                 edrButton.toolTip = "Display Brightness Boost — \(message)"
                 edrButton.setAccessibilityValue("WAITING: \(message)")
-            } else {
+            case .conflict:
+                edrButton.image = NSImage(systemSymbolName: "exclamationmark.triangle", accessibilityDescription: BoostStatus.conflictMessage)
+                edrButton.toolTip = "Display Brightness Boost — \(BoostStatus.conflictMessage)"
+                edrButton.setAccessibilityValue("CONFLICT: \(BoostStatus.conflictMessage)")
+            case .normal:
                 edrButton.toolTip = supported
                     ? "Display Brightness Boost — \(settings.edrBoosted ? "ON" : "OFF")"
                     : "Display Brightness Boost — OFF (Not Supported)"
