@@ -193,12 +193,16 @@ final class GammaConflictTests: XCTestCase {
         XCTAssertFalse(t.isPersistent)
     }
 
-    func testDiffersUsesToleranceAndIgnoresMismatchedCounts() {
+    func testDiffersUsesToleranceAndInterpolatesCounts() {
         let expected: [Float] = [0, 0.5, 1]
         XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [expected, expected, expected]))
         XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 0.501, 1], expected, expected]))
         XCTAssertTrue(GammaConflictTracker.differs(expected: expected, live: [expected, expected, [0, 0.51, 1]]))
+        // Different live sample counts are compared by interpolation.
         XCTAssertFalse(GammaConflictTracker.differs(expected: expected, live: [[0, 1], [0, 1], [0, 1]]))
+        XCTAssertTrue(GammaConflictTracker.differs(expected: expected, live: [[0, 0.8], [0, 1], [0, 1]]))
+        let fine = (0..<1024).map { Float($0) / 1023 }
+        XCTAssertFalse(GammaConflictTracker.differs(expected: (0..<256).map { Float($0) / 255 }, live: [fine, fine, fine]))
     }
 
     func testStatusPrecedence() {

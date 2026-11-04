@@ -33,11 +33,19 @@ struct GammaConflictTracker {
     }
 
     /// True if any sample of any channel differs from `expected` beyond tolerance.
-    /// Differing sample counts are not comparable and never count as a mismatch.
+    /// The display may report a different sample count than the 256 we write, so
+    /// `expected` is linearly interpolated to the live count (our ramps are linear).
     static func differs(expected: [CGGammaValue], live: [[CGGammaValue]]) -> Bool {
-        for channel in live {
-            guard channel.count == expected.count else { return false }
-            for (a, b) in zip(channel, expected) where abs(a - b) > tolerance { return true }
+        guard expected.count > 1 else { return false }
+        for channel in live where channel.count > 1 {
+            let last = Float(channel.count - 1)
+            for (i, value) in channel.enumerated() {
+                let position = Float(i) / last * Float(expected.count - 1)
+                let lower = min(Int(position), expected.count - 2)
+                let fraction = position - Float(lower)
+                let target = expected[lower] + (expected[lower + 1] - expected[lower]) * fraction
+                if abs(value - target) > tolerance { return true }
+            }
         }
         return false
     }

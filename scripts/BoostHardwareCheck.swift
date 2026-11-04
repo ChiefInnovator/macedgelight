@@ -48,8 +48,15 @@ enum BoostHardwareCheck {
 
     /// Child mode: rewrite the gamma table once a second from a separate process.
     static func runExternalWriter(seconds: Int) -> Never {
+        // Behave like a competing tool: set an explicit neutral table on every display.
+        let identity = DisplayBrightnessManager.buildBoostedRamp(scale: 1.0, count: 256)
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        CGGetActiveDisplayList(16, &ids, &count)
         for _ in 0..<seconds {
-            CGDisplayRestoreColorSyncSettings()
+            for id in ids.prefix(Int(count)) {
+                CGSetDisplayTransferByTable(id, 256, identity, identity, identity)
+            }
             Thread.sleep(forTimeInterval: 1)
         }
         exit(0)
