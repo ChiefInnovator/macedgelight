@@ -110,12 +110,9 @@ final class DisplayBrightnessManager {
     /// Linear gamma scale factor — maps the 0-1 range into 0-gammaScale,
     /// stretching values into the EDR range. Preserves relative contrast
     /// (unlike power curves which compress midtones).
-    private let gammaScale: Float = 1.55
-
-    /// Never exceed this fraction of actual current headroom when applying
-    /// gamma boost. Leaves margin for sudden drops (thermal throttling,
-    /// auto-brightness) so content doesn't clip to white.
-    private let gammaHeadroomSafety: Float = 0.90
+    /// Not clamped to live headroom: if macOS grants less than this, content
+    /// above the granted headroom clips. The neutral floor of 1.0 still applies.
+    static let gammaScale: Float = 2.4
 
     /// User-selected strength, 0.1...1.0. Set by `EdgeLightManager`; the manager
     /// does not import `AppSettings` so the hardware harness compiles it alone.
@@ -327,11 +324,7 @@ final class DisplayBrightnessManager {
         lastWrittenRamp = lastWrittenRamp.filter { active.contains($0.key) }
         if hadConflict, !hasGammaConflict { onGammaConflictChange?() }
         for screen in NSScreen.screens where screen.maximumPotentialExtendedDynamicRangeColorComponentValue > 1.0 {
-            let ceiling = Self.safeGammaScale(
-                desired: gammaScale,
-                liveHeadrooms: [Float(screen.maximumExtendedDynamicRangeColorComponentValue)],
-                safety: gammaHeadroomSafety
-            )
+            let ceiling = Self.gammaScale
             checkForGammaConflict(on: screen.displayID)
             applyGammaScale(Self.strengthScale(level: boostLevel, safeCeiling: ceiling), to: screen.displayID)
         }
