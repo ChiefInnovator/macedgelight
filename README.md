@@ -1,10 +1,10 @@
-# MacEdgeLight 3.1.0
+# MacEdgeLight 3.1.1
 
 **Light for your calls. Brightness for your screen.**
 
 MacEdgeLight is a native macOS menu bar app with two independent tools: an adjustable **screen ring light** for calls, recordings, and presentations, and a **display brightness boost** for compatible EDR displays. Use either one, or both.
 
-[Download version 3.1.0](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.0) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.0)
+[Download version 3.1.1](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.1) · [Website](https://chiefinnovator.github.io/macedgelight/) · [Release notes](https://github.com/ChiefInnovator/macedgelight/releases/tag/v3.1.1)
 
 ![MacEdgeLight ring-light borders on a MacBook Pro and external display](docs/images/og-card.jpg)
 
@@ -30,9 +30,9 @@ For people who benefit from additional brightness, seeing text and everyday scre
 
 Extra brightness helps some people with low vision. Results depend on your vision, display, settings, and available headroom. MacEdgeLight also includes a separate magnifier loupe for inspecting details under the cursor.
 
-## Included in Version 3.1.0
+## Included in Version 3.1.1
 
-New in this release: a saved **Boost Strength** menu (10–100%) and a conflict warning when another app rewrites display gamma. 100% matches earlier releases and all safety clamps are unchanged. [Full release notes](docs/RELEASE_NOTES_3.1.0.md).
+New in this release: boost now reaches a gamma scale of 2.4 with no clamp to live headroom, so it is brighter but highlights can clip when macOS grants less. [Full release notes](docs/RELEASE_NOTES_3.1.1.md).
 
 - **Persistent boost preference:** sleep, lock, and user-session changes suspend the renderer without turning off your saved preference.
 - **Continuous recovery:** the app keeps checking until your session and display are ready, including when a display reconnects late.
@@ -55,11 +55,11 @@ New in this release: a saved **Boost Strength** menu (10–100%) and a conflict 
 
 ### Display Brightness Boost
 
-Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier releases; lower levels scale the gamma ramp within the same safety clamp. If another app repeatedly rewrites the display gamma table, the menu and toolbar show a conflict warning (a heuristic, not proof); boost keeps running until you turn it off.
+Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier releases; lower levels scale the gamma ramp toward the 2.4 maximum. If another app repeatedly rewrites the display gamma table, the menu and toolbar show a conflict warning (a heuristic, not proof); boost keeps running until you turn it off.
 
 - Separate menu-bar, toolbar, and keyboard controls.
 - Persistent enabled preference and automatic recovery after sleep, unlock, session switching, and reconnection.
-- Current-headroom safety clamp for each EDR-capable display.
+- Neutral 1.0 floor; no clamp to current headroom.
 - Clean ColorSync restoration when disabled.
 - Enable **Launch at Login** for restoration after logout or restart.
 
@@ -80,7 +80,7 @@ Choose **Boost Strength** (10–100%) from the menu bar. 100% matches earlier re
 
 **Requirements:** macOS 13 Ventura or later; Apple silicon or Intel Mac. Ring lighting supports Retina and non-Retina displays. Brightness boost additionally requires EDR support; examples include Liquid Retina XDR MacBook Pro displays and Pro Display XDR.
 
-1. Download the [3.1.0 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.0/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.0/MacEdgeLight.zip).
+1. Download the [3.1.1 DMG](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.1/MacEdgeLight.dmg) or [ZIP](https://github.com/ChiefInnovator/macedgelight/releases/download/v3.1.1/MacEdgeLight.zip).
 2. Open the DMG and drag **MacEdgeLight** to **Applications**, or extract the ZIP and move the app there.
 3. Open MacEdgeLight and use its menu-bar icon or floating controls.
 4. Enable **Launch at Login** if you want it to return automatically after signing in.
@@ -109,7 +109,7 @@ The checkmark represents your saved preference. The renderer waits while the dis
 
 ### Why is the boost sometimes small?
 
-The available EDR headroom changes with the display and macOS conditions. The current implementation caps gamma scaling at 1.55 and 90% of each display’s current headroom, with a neutral floor of 1.0. These are gamma-scale values, not measured brightness increases. See [Apple’s EDR documentation](https://developer.apple.com/documentation/appkit/nsscreen/maximumextendeddynamicrangecolorcomponentvalue).
+The available EDR headroom changes with the display and macOS conditions. The current implementation scales gamma up to 2.4 with a neutral floor of 1.0 and no clamp to current headroom, so content above the headroom macOS grants can clip. These are gamma-scale values, not measured brightness increases. See [Apple’s EDR documentation](https://developer.apple.com/documentation/appkit/nsscreen/maximumextendeddynamicrangecolorcomponentvalue).
 
 ### Is it free or open source?
 

@@ -32,7 +32,7 @@ The implemented mechanism combines an adjustable screen-edge overlay with option
 
 - Ring lighting works without EDR. Boost requires macOS-reported EDR capability and follows each display's current headroom.
 - Boost preference is persisted separately from active rendering. Waiting is distinct from active boost and remains cancellable. Sleep, lock, and inactive sessions suspend rendering.
-- Gamma scaling is capped at 1.55 and 90% of current headroom, with a neutral floor of 1.0. These values are not measured physical brightness gains. macOS power/thermal limits remain authoritative.
+- Gamma scaling is capped at 2.4 with a neutral floor of 1.0; it is not clamped to current headroom, so highlights can clip when macOS grants less. These values are not measured physical brightness gains. macOS power/thermal limits remain authoritative.
 - Active boost bypasses Night Shift, True Tone, and hardware calibration through the synthetic ramp. Turning it off restores ColorSync.
 - Ring overlay capture inclusion depends on macOS and the recording application. Magnifier uses screen capture; permissions and multi-display behavior require live validation.
 - Double-click bulb resets ring settings while preserving independent tools; Reset to Defaults is broader. Keep these actions distinct.

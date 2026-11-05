@@ -52,7 +52,7 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 - `StatusBarController` — Menu bar icon and dropdown menu.
 - `HotkeyManager` — Global keyboard shortcuts: Cmd+Shift+L toggles light, Cmd+Shift+Up/Down adjusts brightness, Cmd+Shift+B toggles XDR boost, and five rapid unmodified `Q` taps panic-quit.
 - `LoginItemManager` — Launch-at-login via `SMAppService`.
-- `DisplayBrightnessManager` — XDR brightness boost using an invisible Metal EDR overlay plus a synthetic linear gamma ramp. User strength (`boostLevel`) scales against each display's safe ceiling; `GammaConflictTracker` flags repeated external gamma changes (read before write, never clears the preference).
+- `DisplayBrightnessManager` — XDR brightness boost using an invisible Metal EDR overlay plus a synthetic linear gamma ramp. User strength (`boostLevel`) scales toward the global `gammaScale` ceiling (2.4); `GammaConflictTracker` flags repeated external gamma changes (read before write, never clears the preference).
 - `MagnifierWindow` — Floating magnifier loupe following cursor.
 - `EDRInfoWindow` — Debug-only panel shown when a debugger is attached; live headroom, gamma deviation, color-space diagnostics, and a copy button.
 
@@ -69,7 +69,7 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 - Recovery checks every 0.5 seconds without a retry limit. Require an enabled preference, available display, running manager, awake displays/system, and an active, usable, unlocked user session. Sample `CGSessionCopyCurrentDictionary` during recovery; stale session data must not undo a suspension notification.
 - System/display wake settles for 2 seconds; unlock/session activation settles for 0.75 seconds. Use monotonic uptime, and never shorten an existing settle deadline when events overlap.
 - Start/stop and `DisplayBrightnessManager.setEnabled(_:)` are idempotent. Stop recovery before other termination cleanup so boost cannot reactivate after shutdown or a manual toggle off.
-- Gamma maintenance reasserts a freshly generated ramp every 0.5 seconds, even if headroom is unchanged, and retries failed writes. Each display uses its own current headroom. Preserve the neutral floor of 1.0 and existing safety clamp; potential headroom is a capability indicator, not a safe rendering limit.
+- Gamma maintenance reasserts a freshly generated ramp every 0.5 seconds, even if headroom is unchanged, and retries failed writes. Preserve the neutral floor of 1.0. The ramp is capped at `gammaScale` (2.4) and intentionally not clamped to live headroom (owner decision, 3.1.1); potential headroom is a capability indicator, not a safe rendering limit.
 - AppKit and gamma operations belong on the main thread. Render targets are keyed by display ID; protect shared snapshots with `renderLock`, and never hold it while `nextDrawable()` can block. Old callbacks must not update removed or replacement layers.
 - Rebuild overlays for topology changes or stalled submissions, not ordinary headroom notifications. Keep EDR contexts alive while updating headroom.
 - Actual logout terminates the app; automatic restoration requires Launch at Login. Do not promise constant physical luminance or boost on the login window, and do not override macOS thermal/power limits.
