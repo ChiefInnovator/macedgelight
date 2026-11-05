@@ -181,7 +181,7 @@ On displays that support Extended Dynamic Range (MacBook Pro 14/16 with M1 Pro/M
 2. The Metal layer uses `.rgba16Float` pixel format and `CGColorSpace.extendedLinearDisplayP3`
 3. `wantsExtendedDynamicRangeContent = true` signals the compositor to unlock XDR mode
 4. The Metal layer renders EDR values with **alpha=0** — invisible to the user but signals macOS to grant extended headroom
-5. A `CVDisplayLink` re-renders every frame to prevent EDR headroom decay
+5. A `CVDisplayLink` re-renders every frame to prevent EDR headroom decay. Each callback runs inside `autoreleasepool`: the display-link thread never drains its own pool, so per-frame drawables and command buffers (and their IOSurface shared events) would otherwise accumulate until boost turns off or the app exits (fixed in 3.1.2)
 6. No compositing filter — the overlay does not visually affect screen content
 
 ### Linear Gamma Scaling
