@@ -355,8 +355,13 @@ final class DisplayBrightnessManager {
               let link else { return }
         let selfPtr = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         let callbackResult = CVDisplayLinkSetOutputCallback(link, { (_, _, _, _, _, userInfo) -> CVReturn in
-            let mgr = Unmanaged<DisplayBrightnessManager>.fromOpaque(userInfo!).takeUnretainedValue()
-            mgr.renderAllLayers()
+            // The display-link thread never drains its own pool; without this,
+            // each frame's drawable/command buffer (and its IOSurfaceSharedEvent)
+            // is stranded until the thread exits, exhausting the system limit.
+            autoreleasepool {
+                let mgr = Unmanaged<DisplayBrightnessManager>.fromOpaque(userInfo!).takeUnretainedValue()
+                mgr.renderAllLayers()
+            }
             return kCVReturnSuccess
         }, selfPtr)
         guard callbackResult == kCVReturnSuccess else { return }
