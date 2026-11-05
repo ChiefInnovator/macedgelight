@@ -235,3 +235,22 @@ final class BoostStrengthMenuTests: XCTestCase {
         XCTAssertFalse(StatusBarController.boostStrengthEnabled(supported: false, desired: false))
     }
 }
+
+final class GammaCeilingTests: XCTestCase {
+    func testGlobalCeilingIs2_4AndFullLevelReachesIt() {
+        XCTAssertEqual(DisplayBrightnessManager.gammaScale, 2.4)
+        XCTAssertEqual(DisplayBrightnessManager.strengthScale(level: 1.0, safeCeiling: DisplayBrightnessManager.gammaScale), 2.4, accuracy: 1e-6)
+    }
+
+    func testLowerLevelsScaleTowardCeilingWithNeutralFloor() {
+        let low = DisplayBrightnessManager.strengthScale(level: 0.1, safeCeiling: DisplayBrightnessManager.gammaScale)
+        XCTAssertEqual(low, 1.14, accuracy: 1e-5)
+        XCTAssertGreaterThanOrEqual(low, 1.0)
+    }
+
+    func testRampAtCeilingEndsAtCeiling() {
+        let ramp = DisplayBrightnessManager.buildBoostedRamp(scale: DisplayBrightnessManager.gammaScale, count: 256)
+        XCTAssertEqual(ramp.last ?? 0, 2.4, accuracy: 1e-6)
+        XCTAssertEqual(ramp.first, 0)
+    }
+}
