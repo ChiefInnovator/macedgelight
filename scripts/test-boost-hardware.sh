@@ -15,6 +15,6 @@ boost_check_dir="$(mktemp -d -t macedgelight-boost-check)"
 trap 'rm -rf "$boost_check_dir"' EXIT
 xcrun swiftc "${swift_flags[@]}" "$repo_dir/MacEdgeLight/DisplayBrightnessManager.swift" \
     "$repo_dir/scripts/BoostHardwareCheck.swift" \
-    -framework Cocoa -framework Metal -framework QuartzCore \
+    -framework Cocoa -framework Metal -framework QuartzCore -framework IOKit \
     -o "$boost_check_dir/BoostHardwareCheck"
 "$boost_check_dir/BoostHardwareCheck"
