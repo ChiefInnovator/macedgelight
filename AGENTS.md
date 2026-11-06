@@ -90,7 +90,7 @@ The app intentionally does not use sandbox entitlements because overlay windows 
 
 - Run `make test` after Swift changes when practical, and `make build` for a deliverable debug app.
 - Tests cover settings persistence, panic tap detection, gamma ramp/clamp behavior, and recovery transitions. Test the production event handler when changing lifecycle behavior, including event order, delayed availability, repeated cycles, and cancellation.
-- Live display checks: `bash scripts/test-boost-hardware.sh`; add `--thread-sanitizer` to check the rendering path for races. Quit MacEdgeLight first to avoid competing gamma writers. The harness temporarily changes display gamma without changing saved app preferences, and restores ColorSync on completion, caught failure, or ordinary SIGINT/SIGTERM cancellation.
+- Live display checks: `bash scripts/test-boost-hardware.sh`; add `--thread-sanitizer` to check the rendering path for races. It also fails if the system-wide `IOSurfaceSharedEvent` count grows by more than 100 during the 30-second sustained phase (regression check for the 3.1.1 per-frame leak). Quit MacEdgeLight first to avoid competing gamma writers. The harness temporarily changes display gamma without changing saved app preferences, and restores ColorSync on completion, caught failure, or ordinary SIGINT/SIGTERM cancellation.
 - Hardware readback checks do not prove physical brightness or real sleep/logout behavior. Use the manual acceptance checklist in `docs/SPEC.md` for sleep/wake, lock/unlock, login, display reconnection, and sustained use.
 
 ## Documentation

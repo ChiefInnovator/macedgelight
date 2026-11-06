@@ -1,4 +1,5 @@
 import Cocoa
+import IOKit
 
 // Standalone harness: compiles the production manager without starting the
 // normal app, registering hotkeys, or reading/writing its saved preferences.
@@ -27,6 +28,20 @@ enum BoostHardwareCheck {
                 throw Failure.message("\(screen.localizedName): gamma differs from expected scale \(expectedScale), max error \(error)")
             }
         }
+    }
+
+    /// System-wide live IOSurfaceSharedEvent objects (read-only IOKitDiagnostics).
+    /// 3.1.1 leaked one per display-link frame; the limit is 65,535.
+    static func sharedEventCount() throws -> Int {
+        let root = IORegistryGetRootEntry(kIOMainPortDefault)
+        defer { IOObjectRelease(root) }
+        guard let diagnostics = IORegistryEntryCreateCFProperty(root, "IOKitDiagnostics" as CFString, kCFAllocatorDefault, 0)?
+                .takeRetainedValue() as? [String: Any],
+              let classes = diagnostics["Classes"] as? [String: Any],
+              let count = classes["IOSurfaceSharedEvent"] as? Int else {
+            throw Failure.message("IOSurfaceSharedEvent count unavailable from IOKitDiagnostics")
+        }
+        return count
     }
 
     enum Failure: Error {
@@ -134,6 +149,8 @@ enum BoostHardwareCheck {
             }
             print("PASS: conflict state clears within 15 seconds of the last external reset")
 
+            // Other processes can allocate a few; a per-frame leak adds ~120/s per display.
+            let sharedEventsBefore = try sharedEventCount()
             var minimumHeadroom = Double.infinity
             var maximumHeadroom = 1.0
             for _ in 0..<30 {
@@ -147,6 +164,11 @@ enum BoostHardwareCheck {
                 }
             }
             print("PASS: 30-second sustained gamma check; headroom range \(minimumHeadroom)...\(maximumHeadroom)")
+            let sharedEventGrowth = try sharedEventCount() - sharedEventsBefore
+            guard sharedEventGrowth <= 100 else {
+                throw Failure.message("IOSurfaceSharedEvent count grew by \(sharedEventGrowth) during 30 seconds of boost; display-link resources are leaking")
+            }
+            print("PASS: IOSurfaceSharedEvent count stable during sustained boost (growth \(sharedEventGrowth))")
 
             // A separate process rewrites the table every second.
             let writer = Process()
