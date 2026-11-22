@@ -13,17 +13,21 @@ DEVELOPER_ID = Developer ID Application: MILL5, LLC (FS6453639M)
 EXPORT_OPTIONS = scripts/ExportOptions-export.plist
 UPLOAD_OPTIONS = scripts/ExportOptions-upload.plist
 
-.PHONY: all clean build test archive export export-unsigned sign notarize dmg-bg dmg zip release package verify-release release-unsigned sync-site-version check-site-version
+.PHONY: all clean build test check archive export export-unsigned sign notarize dmg-bg dmg zip release package verify-release release-unsigned sync-site-version check-site-version
 
 all: build
 
 # Debug build
 build:
-	xcodebuild -scheme $(SCHEME) -configuration Debug build SYMROOT=$(CURDIR)/$(BUILD_DIR)
+	xcodebuild -scheme $(SCHEME) -configuration Debug build SYMROOT=$(CURDIR)/$(BUILD_DIR) $(XCFLAGS)
 
 # Run unit tests
 test:
-	xcodebuild test -scheme $(SCHEME) -destination 'platform=macOS'
+	xcodebuild test -scheme $(SCHEME) -destination 'platform=macOS' $(XCFLAGS)
+
+# Build and validate; must pass before any push or pull request.
+# CI passes XCFLAGS="CODE_SIGNING_ALLOWED=NO" because runners have no signing identity.
+check: check-site-version build test
 
 # Release archive
 archive:

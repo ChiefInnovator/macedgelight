@@ -1,0 +1,34 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  html,body{margin:0}
+  body{width:2340px;height:1920px;position:relative;overflow:hidden;background:#0b0d10;
+    font-family:"SF Pro Display",-apple-system,"Helvetica Neue",Arial,sans-serif;color:#F7F3EA}
+  .photo{position:absolute;inset:0;background:url(assets/product-photo-crop.jpg) center/cover}
+  .scrim{position:absolute;inset:0;background:
+    radial-gradient(1300px 1000px at 0% 0%,rgba(6,8,12,.94),rgba(6,8,12,.72) 55%,transparent 78%),
+    radial-gradient(1100px 1000px at 100% 100%,rgba(6,8,12,.95),rgba(6,8,12,.75) 55%,transparent 80%)}
+  h1{position:absolute;left:96px;top:84px;margin:0;font-size:176px;line-height:.98;font-weight:800;letter-spacing:-5px}
+  h1 em{font-style:normal;color:#FFE9C2;text-shadow:0 0 28px rgba(255,189,98,.95),0 0 90px rgba(255,160,60,.75)}
+  .sub{position:absolute;left:104px;top:668px;font-size:62px;font-weight:600;color:#A9DCFF;letter-spacing:-.5px;line-height:1.15}
+  .panel{position:absolute;right:56px;bottom:56px;width:660px;padding:36px;border-radius:44px;background:rgba(8,11,16,.88)}
+  .brand{display:flex;align-items:center;gap:24px;margin-bottom:36px}
+  .brand img{width:132px;height:132px}
+  .brand b{display:block;font-size:66px;font-weight:800;letter-spacing:-2px}
+  .brand span{font-size:34px;color:#BFC9CF;font-weight:500}
+  .chip{display:flex;justify-content:space-between;align-items:center;border-radius:30px;padding:28px 32px;margin-top:20px;
+    font-size:46px;font-weight:700;background:rgba(18,24,32,.82);border:3px solid}
+  .chip kbd{font-family:inherit;font-size:42px;font-weight:600;opacity:.9}
+  .ring{border-color:#FFBD62;color:#FFE1AE;box-shadow:0 0 44px rgba(255,189,98,.5)}
+  .boost{border-color:#A9DCFF;color:#D6EEFF;box-shadow:0 0 44px rgba(169,220,255,.45)}
+  .fine{margin-top:28px;font-size:29px;color:#BFC9CF;line-height:1.3}
+</style>
+<div class="photo"></div><div class="scrim"></div>
+<h1>Your Mac<br>is the<br><em>ring light.</em></h1>
+<div class="sub">And a brightness boost<br>for your screen.</div>
+<div class="panel">
+  <div class="brand"><img src="assets/app-icon.png" alt=""><div><b>MacEdgeLight</b><span>Version 3.1.2 · macOS 13+</span></div></div>
+  <div class="chip ring">Ring Light <kbd>⌘ ⇧ L</kbd></div>
+  <div class="chip boost">Brightness Boost <kbd>⌘ ⇧ B</kbd></div>
+  <div class="fine">Brightness boost requires an EDR-capable display.<br>chiefinnovator.github.io/macedgelight</div>
+</div>

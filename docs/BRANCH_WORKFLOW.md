@@ -1,14 +1,16 @@
 # Protected branch workflow
 
-Changes flow `feature/<name>` → `develop` → `main`, using pull requests and merge commits.
+Changes flow `feature/<name>`, `fix/<name>`, or `chore/<name>` → `develop` → `main`, using pull
+requests and merge commits. `develop` is the default and integration branch; `main` holds released code.
 Both source branches must be in `ChiefInnovator/macedgelight`; forks must first be imported to a feature branch.
-A feature name must be nonempty after `feature/`.
+The name after the prefix must be nonempty.
 
 ## Enforcement
 
 Active rulesets have no bypass actors, including administrators. They require a pull request,
-resolved review threads, and passing GitHub Actions checks named `Branch source policy` and
-`check-version`. Strict status checking requires the source to be current with its target.
+resolved review threads, and passing GitHub Actions checks named `Branch source policy`, `check`,
+and `check-version`. The `check` job runs `make check` (version consistency, debug build, unit tests)
+with code signing disabled. Strict status checking requires the source to be current with its target.
 Deletion and force pushes are blocked. Zero human approvals are required for this solo-developer
 repository; automatic Copilot feedback and required checks remain separate controls.
 
@@ -25,10 +27,10 @@ request reviews; repository rules cannot override those settings. Never manually
 ## Daily use
 
 ```sh
-git switch develop
-git pull --ff-only origin develop
-git switch -c feature/my-change
-# edit, check, commit
+git fetch
+git checkout -b feature/my-change origin/develop
+# edit, commit
+make check
 git push -u origin feature/my-change
 gh pr create --base develop
 ```
@@ -39,7 +41,12 @@ merge the target into the source and push. Never delete `develop` after promotio
 
 For promotion, create a `develop` → `main` PR. Merge `main` back into `develop` through a
 `feature/*` synchronization branch if a later change needs the promotion merge in its ancestry.
-The default branch remains `main`; GitHub Pages and published releases remain tied to main.
+The default branch is `develop`; GitHub Pages and published releases remain tied to `main`.
+
+Merging to `main` deploys the site from `docs/` and runs the `Release` workflow, which tags
+`v<MARKETING_VERSION>` and creates the GitHub release if that release does not exist. Build the
+notarized DMG and ZIP locally, then attach them with `gh release upload`. Merged source branches
+are deleted automatically; `develop` is protected from deletion.
 
 ## Bootstrap and recovery
 
@@ -50,6 +57,13 @@ Rulesets: Copilot `21801552`, main `26362064`, develop `26362065`.
 If a required job is missing, repair its trusted workflow through the same allowed PR path.
 Do not add an administrator bypass or disable protection as routine recovery. GitHub service
 outages can delay merges; a green local check does not substitute for a required remote check.
+
+## Process update (2026-11-22)
+
+PR #14 added `make check`, the required `check` job, `fix/` and `chore/` sources, and the `Release`
+workflow. `develop` became the default branch and automatic deletion of merged branches was enabled.
+The widened source predicate takes effect once PR #14 is on `develop`, because the trusted workflow
+runs from the base branch. The `Release` workflow first runs on the next merge to `main`.
 
 ## Verification evidence (2026-11-02)
 
