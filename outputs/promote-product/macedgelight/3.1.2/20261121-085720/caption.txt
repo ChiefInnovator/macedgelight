@@ -1,0 +1,8 @@
+Your Mac is the ring light.
+
+MacEdgeLight 3.1.2 puts an adjustable glowing border around your screen for calls, recordings, and presentations, and adds an independent brightness boost for EDR-capable displays.
+
+Ring Light: Command + Shift + L
+Brightness Boost: Command + Shift + B
+
+https://chiefinnovator.github.io/macedgelight/
