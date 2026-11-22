@@ -121,7 +121,7 @@ MacEdgeLight uses a conservative workaround for displays that fail to regain bri
 
 ## Development and design
 
-Changes flow through `feature/<name>` → `develop` → `main`; see the [protected branch workflow](docs/BRANCH_WORKFLOW.md).
+Changes flow through `feature/<name>`, `fix/<name>`, or `chore/<name>` → `develop` → `main`; see the [protected branch workflow](docs/BRANCH_WORKFLOW.md).
 Project-local [Google EGM](https://github.com/google/elephant-goldfish-model) and [Impeccable](https://github.com/pbakaus/impeccable) skills are installed in `.agents/skills`, with EGM personas/standards alongside them.
 The [whole-product design](docs/design/design_draft.md), [fresh Goldfish review](docs/design/consolidated_review_report.md), and [finding resolutions](docs/design/goldfish_resolution.md) record the current review work.
 Product and visual context live in [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
