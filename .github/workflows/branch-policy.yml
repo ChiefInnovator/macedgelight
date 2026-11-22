@@ -26,6 +26,6 @@ jobs:
           fi
           case "$BASE" in
             main) [[ "$HEAD" == develop ]] || { echo '::error::main accepts only develop.'; exit 1; } ;;
-            develop) [[ "$HEAD" == feature/* && "$HEAD" != feature/ ]] || { echo '::error::develop accepts only feature/<name>.'; exit 1; } ;;
+            develop) [[ "$HEAD" =~ ^(feature|fix|chore)/.+ ]] || { echo '::error::develop accepts only feature/<name>, fix/<name>, or chore/<name>.'; exit 1; } ;;
             *) echo '::error::Unexpected target branch.'; exit 1 ;;
           esac
