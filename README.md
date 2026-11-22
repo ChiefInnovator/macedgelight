@@ -137,6 +137,7 @@ MacEdgeLight uses Swift and AppKit, with no third-party runtime dependencies. Op
 ```bash
 make build       # Debug app in build/Debug/MacEdgeLight.app
 make test        # Unit tests
+make check       # Version check, debug build, and unit tests (run before every push)
 make release     # Developer ID signed, notarized DMG and ZIP
 make clean       # Remove build artifacts
 ```

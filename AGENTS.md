@@ -12,9 +12,12 @@ Repository instructions for Codex. Keep this guide aligned with the implementati
 
 ## Branch and Review Workflow
 
+- `develop` is the default and integration branch; `main` holds released code. Cut every branch from the latest `origin/develop`.
 - `main` accepts pull requests only from this repository's `develop` branch.
-- `develop` accepts pull requests only from this repository's `feature/<name>` branches.
-- Both branches require `Branch source policy` and `check-version`, resolved review threads, and merge commits. No bypass actors, direct pushes, deletion, or force pushes.
+- `develop` accepts pull requests only from this repository's `feature/<name>`, `fix/<name>`, and `chore/<name>` branches.
+- Both branches require `Branch source policy`, `check`, and `check-version`, resolved review threads, and merge commits. No bypass actors, direct pushes, deletion, or force pushes.
+- Run `make check` (version consistency, debug build, unit tests) before every push; CI runs the same command as the `check` job.
+- Release: bump the version on a feature PR into `develop`, then open a PR from `develop` into `main`. Merging to `main` deploys the site from `docs/` and runs the `Release` workflow, which tags `v<MARKETING_VERSION>` and creates the GitHub release if it does not exist. Attach the locally notarized DMG and ZIP with `gh release upload`.
 - Automatic cloud Copilot review targets `develop` only. Monitor reviews after real pushes; never request or re-request them manually.
 - EGM runtime is project-local in `.agents/`: skills, personas, standards, docs, and pinned provenance. Impeccable is in `.agents/skills/impeccable`.
 - Product context is `PRODUCT.md`; visual context is `DESIGN.md` and `.impeccable/design.json`. See `docs/design/` for design and review evidence.
@@ -30,6 +33,7 @@ MacEdgeLight is a native macOS menu bar utility that renders an ambient glowing 
 ```bash
 make build       # Debug build
 make test        # Unit tests
+make check       # Version consistency + build + tests; run before every push
 make release     # Signed/notarized DMG + zip for distribution
 make clean       # Clean build artifacts
 ```
